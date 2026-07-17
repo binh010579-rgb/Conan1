@@ -290,6 +290,9 @@
   let audioContext = null;
   let audioMaster = null;
   let ambientNodes = [];
+  let scoreTimer = 0;
+  let scoreStep = 0;
+  let scoreNextTime = 0;
 
   function saveGame() {
     if (state.phase === "title") return;
@@ -549,6 +552,7 @@
 
   function startInterrogation() {
     setPhase("interrogation", "Hỏi cung nghi phạm");
+    playPianoChord([43, 50, 55, 58], 1.05, 0.012);
     elements.locationNav.hidden = true;
     elements.hotspotLayer.replaceChildren();
     changeLocation("hall");
@@ -588,6 +592,7 @@
     if (!elements.deduction.open) elements.deduction.showModal();
     renderDeductionQuestion();
     playTone(220, 0.32, "sawtooth", 0.018);
+    playPianoChord([38, 50, 57, 62, 65], 1.25, 0.014, 0.08);
   }
 
   function renderDeductionQuestion() {
@@ -644,6 +649,8 @@
     elements.deduction.close();
     state.rank = state.mistakes === 0 ? "S" : state.mistakes <= 2 ? "A" : "B";
     setPhase("reveal", "Vạch trần sự thật");
+    playPianoChord([33, 45, 52, 55, 61], 1.15, 0.016);
+    playPianoChord([38, 50, 57, 62, 65], 1.8, 0.014, 0.68);
     playDialogue(reveal, showEnding);
   }
 
@@ -826,10 +833,138 @@
         oscillator.start();
         ambientNodes.push(oscillator);
       });
+      startDetectiveScore();
     } catch {
       audioContext = null;
       audioMaster = null;
     }
+  }
+
+  function midiToFrequency(note) {
+    return 440 * (2 ** ((note - 69) / 12));
+  }
+
+  function schedulePianoNote(note, when, duration = 0.72, volume = 0.018) {
+    if (!audioContext || !audioMaster) return;
+    const frequency = midiToFrequency(note);
+    const envelope = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(3600, when);
+    filter.frequency.exponentialRampToValueAtTime(1500, when + duration);
+    envelope.gain.setValueAtTime(0.0001, when);
+    envelope.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), when + 0.012);
+    envelope.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume * 0.32), when + 0.11);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, when + duration);
+    envelope.connect(filter);
+    filter.connect(audioMaster);
+
+    [
+      [1, "sine", 0.72],
+      [2, "sine", 0.2],
+      [3, "triangle", 0.08],
+    ].forEach(([harmonic, type, level]) => {
+      const oscillator = audioContext.createOscillator();
+      const harmonicGain = audioContext.createGain();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(frequency * harmonic, when);
+      oscillator.detune.setValueAtTime(harmonic === 1 ? -2 : 2, when);
+      harmonicGain.gain.value = level;
+      oscillator.connect(harmonicGain);
+      harmonicGain.connect(envelope);
+      oscillator.start(when);
+      oscillator.stop(when + duration + 0.04);
+    });
+  }
+
+  function playPianoChord(notes, duration = 1, volume = 0.012, delay = 0) {
+    if (!state.sound) return;
+    initAudio();
+    if (!audioContext || !audioMaster) return;
+    const when = audioContext.currentTime + delay;
+    notes.forEach((note, index) => {
+      schedulePianoNote(note, when + index * 0.016, duration, volume);
+    });
+  }
+
+  function scheduleClockTick(when, accent = false) {
+    if (!audioContext || !audioMaster) return;
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = "square";
+    oscillator.frequency.setValueAtTime(accent ? 1480 : 1120, when);
+    oscillator.frequency.exponentialRampToValueAtTime(760, when + 0.028);
+    gain.gain.setValueAtTime(accent ? 0.012 : 0.006, when);
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.045);
+    oscillator.connect(gain);
+    gain.connect(audioMaster);
+    oscillator.start(when);
+    oscillator.stop(when + 0.055);
+  }
+
+  function scoreIntensity() {
+    const levels = {
+      title: 0.25,
+      prologue: 0.52,
+      investigation: 0.48,
+      interrogation: 0.68,
+      deduction: 1,
+      reveal: 0.9,
+      ending: 0.38,
+    };
+    return levels[state.phase] ?? 0.45;
+  }
+
+  function scheduleDetectiveStep(step, when) {
+    const intensity = scoreIntensity();
+    const chords = [
+      { bass: 38, notes: [50, 57, 62, 64, 65] },
+      { bass: 34, notes: [46, 53, 57, 62, 65] },
+      { bass: 31, notes: [43, 50, 55, 58, 64] },
+      { bass: 33, notes: [45, 52, 55, 61, 70] },
+    ];
+    const arpeggioOrder = [0, 2, 3, 1, 4, 2, 3, 1];
+    const chord = chords[Math.floor(step / 8) % chords.length];
+    const localStep = step % 8;
+    const activeEveryStep = state.phase === "deduction" || state.phase === "reveal";
+
+    if (localStep === 0) {
+      schedulePianoNote(chord.bass, when, 1.35, 0.025 * intensity);
+      schedulePianoNote(chord.notes[0], when + 0.018, 1.05, 0.014 * intensity);
+    }
+
+    if (activeEveryStep || localStep % 2 === 0) {
+      const note = chord.notes[arpeggioOrder[localStep]];
+      schedulePianoNote(note, when, activeEveryStep ? 0.52 : 0.78, 0.014 * intensity);
+    }
+
+    if ((state.phase === "interrogation" || state.phase === "deduction") && localStep === 6) {
+      schedulePianoNote(chord.notes[4] + 12, when, 0.42, 0.011 * intensity);
+    }
+
+    if (state.phase === "deduction") {
+      scheduleClockTick(when, localStep === 0 || localStep === 4);
+    } else if (step % 8 === 0 && state.phase !== "ending") {
+      scheduleClockTick(when, true);
+    }
+  }
+
+  function runScoreScheduler() {
+    if (!audioContext || !audioMaster) return;
+    const stepDuration = 60 / 96 / 2;
+    while (scoreNextTime < audioContext.currentTime + 0.22) {
+      scheduleDetectiveStep(scoreStep, scoreNextTime);
+      scoreStep = (scoreStep + 1) % 32;
+      scoreNextTime += stepDuration;
+    }
+    scoreTimer = window.setTimeout(runScoreScheduler, 80);
+  }
+
+  function startDetectiveScore() {
+    if (!audioContext || scoreTimer) return;
+    scoreStep = 0;
+    scoreNextTime = audioContext.currentTime + 0.08;
+    runScoreScheduler();
   }
 
   function playTone(frequency, duration, type = "sine", volume = 0.02) {
