@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#07111f" />
+    <meta name="theme-color" content="#06111b" />
     <meta name="description" content="Fan game trinh thám 2D: Bản Nhạc Lúc 0 Giờ." />
     <title>Conan — Bản Nhạc Lúc 0 Giờ</title>
     <link rel="icon" href="./favicon.svg" />
@@ -14,22 +14,16 @@
       <div class="rain" aria-hidden="true"></div>
 
       <section id="title-screen" class="screen title-screen active" aria-labelledby="game-title">
-        <div class="title-noir" aria-hidden="true">
-          <span class="clock-face">00:00</span>
-          <span class="piano-keys"></span>
-          <span class="detective-shadow"></span>
-        </div>
+        <div class="title-clock" aria-hidden="true">00:00</div>
         <div class="title-copy">
-          <p class="eyebrow">VỤ ÁN FAN-MADE • CHƯƠNG 1</p>
+          <p class="eyebrow">HỒ SƠ FAN-MADE • CHƯƠNG 1</p>
           <h1 id="game-title"><span>CONAN</span>Bản Nhạc Lúc 0 Giờ</h1>
-          <p class="title-lead">
-            Một bản nhạc vang lên từ căn phòng khóa kín. Nhưng người chơi đàn đã chết từ trước đó.
-          </p>
+          <p class="title-lead">Một bản nhạc vang lên từ căn phòng khóa kín. Nhưng người chơi đàn đã chết từ trước đó.</p>
           <div class="title-actions">
-            <button id="new-game-button" class="button primary" type="button">Bắt đầu điều tra</button>
-            <button id="continue-button" class="button ghost" type="button" hidden>Tiếp tục vụ án</button>
+            <button id="new-game-button" class="button primary" type="button">Bắt đầu vụ án</button>
+            <button id="continue-button" class="button ghost" type="button" hidden>Tiếp tục điều tra</button>
           </div>
-          <p class="fan-note">Fan game phi thương mại, không liên kết với đơn vị sở hữu Thám tử lừng danh Conan. Nhạc nền trinh thám trong game là bản nguyên gốc được tổng hợp trực tiếp.</p>
+          <p class="fan-note">Fan game phi thương mại. Toàn bộ hình ảnh noir và nhạc nền trong bản thử nghiệm này là nội dung nguyên gốc.</p>
         </div>
       </section>
 
@@ -37,39 +31,22 @@
         <header class="case-header">
           <div class="case-identity">
             <span class="case-emblem" aria-hidden="true">◆</span>
-            <span class="case-label">HỒ SƠ 001</span>
-            <strong>Bản Nhạc Lúc 0 Giờ</strong>
+            <div><span class="case-label">HỒ SƠ 001</span><strong>Bản Nhạc Lúc 0 Giờ</strong></div>
           </div>
           <div class="case-status">
-            <span id="objective-label" class="objective-label">Đọc phần mở đầu</span>
-            <span id="phase-label">Giai đoạn: Mở đầu</span>
+            <span id="objective-label" class="objective-label">Đọc mở đầu vụ án</span>
+            <span id="phase-label">Mở đầu</span>
             <button id="sound-button" class="icon-button" type="button" aria-label="Bật hoặc tắt âm thanh">ÂM: BẬT</button>
-            <button id="notebook-button" class="icon-button" type="button" aria-label="Mở sổ điều tra">SỔ <b id="clue-count">0</b></button>
+            <button id="notebook-button" class="icon-button notebook-button" type="button" aria-label="Mở sổ điều tra">SỔ <b id="record-count">0</b></button>
           </div>
         </header>
 
         <main id="scene" class="scene scene-hall" aria-live="polite">
           <div class="scene-backdrop" aria-hidden="true"></div>
-          <div class="scene-depth" aria-hidden="true"></div>
-          <div class="scene-sky" aria-hidden="true"></div>
-          <div class="scene-building" aria-hidden="true">
-            <span class="window w1"></span><span class="window w2"></span><span class="window w3"></span>
-            <span class="window w4"></span><span class="window w5"></span><span class="window w6"></span>
-          </div>
-          <div class="scene-room" aria-hidden="true">
-            <span class="wall-clock">00:07</span>
-            <span class="studio-door"></span>
-            <span class="grand-piano"></span>
-            <span class="control-desk"></span>
-            <span class="coffee-cup"></span>
-          </div>
-          <div id="hotspot-layer" class="hotspot-layer"></div>
-          <div id="scan-cursor" class="scan-cursor" aria-hidden="true"><i></i></div>
-          <button id="scan-button" class="scan-button" type="button" hidden>
-            <span aria-hidden="true">⌕</span> QUÉT HIỆN TRƯỜNG <kbd>Q</kbd>
-          </button>
-          <div id="scene-caption" class="scene-caption">Nhà hát Tsukikage • Đêm mưa</div>
-
+          <div class="scene-vignette" aria-hidden="true"></div>
+          <div id="object-layer" class="object-layer"></div>
+          <div id="scene-caption" class="scene-caption">Hành lang nhà hát • 0 giờ 07</div>
+          <div id="scene-tip" class="scene-tip" hidden>Đồ vật khả nghi sẽ phản sáng rất nhẹ. Hãy quan sát cảnh thật.</div>
           <nav id="location-nav" class="location-nav" aria-label="Chọn địa điểm" hidden>
             <button type="button" data-location="studio">Phòng thu A</button>
             <button type="button" data-location="control">Phòng điều khiển</button>
@@ -77,20 +54,12 @@
           </nav>
         </main>
 
-        <section id="dialogue-panel" class="dialogue-panel" aria-label="Hội thoại và hướng dẫn — bấm để tiếp tục" tabindex="0">
-          <span class="dialogue-kicker" aria-hidden="true">HỒ SƠ TRỰC TIẾP</span>
-          <div id="portrait" class="portrait conan" aria-hidden="true">
-            <span class="portrait-hair"></span>
-            <span class="portrait-face"></span>
-            <span class="portrait-glasses"></span>
-            <span class="portrait-body"></span>
-          </div>
+        <section id="dialogue-panel" class="dialogue-panel" aria-label="Hội thoại — bấm để tiếp tục" tabindex="0">
+          <span class="dialogue-kicker">HỘI THOẠI</span>
+          <div id="portrait" class="portrait conan" aria-hidden="true"></div>
           <div class="dialogue-copy">
-            <div class="speaker-line">
-              <strong id="speaker-name">Conan</strong>
-              <span id="speaker-role">Thám tử</span>
-            </div>
-            <p id="dialogue-text" aria-live="polite">Một vụ án bắt đầu từ khoảnh khắc mọi người tin rằng mình đã nghe thấy sự thật.</p>
+            <div class="speaker-line"><strong id="speaker-name">Edogawa Conan</strong><span id="speaker-role">Thám tử</span></div>
+            <p id="dialogue-text" aria-live="polite">Sự thật không nằm trong một lựa chọn có sẵn. Nó nằm ở cách các chi tiết va vào nhau.</p>
             <div id="choice-list" class="choice-list"></div>
           </div>
           <span class="dialogue-hint" aria-hidden="true">Bấm khung thoại hoặc phím cách</span>
@@ -98,60 +67,93 @@
         </section>
       </section>
 
-      <dialog id="notebook" class="notebook">
+      <dialog id="notebook" class="full-dialog notebook">
         <form method="dialog" class="notebook-card">
           <header>
-            <div>
-              <span>SỔ TAY CỦA CONAN</span>
-              <h2>Hồ sơ điều tra</h2>
-            </div>
+            <div><span>SỔ TAY CỦA CONAN</span><h2>Hồ sơ điều tra</h2></div>
             <button class="close-button" value="close" aria-label="Đóng sổ">×</button>
           </header>
           <div class="notebook-tabs" role="tablist">
-            <button type="button" class="active" data-tab="clues">Chứng cứ</button>
-            <button type="button" data-tab="suspects">Nghi phạm</button>
+            <button type="button" class="active" data-tab="statements">Lời khai</button>
+            <button type="button" data-tab="evidence">Vật chứng</button>
+            <button type="button" data-tab="links">Mâu thuẫn</button>
             <button type="button" data-tab="timeline">Dòng thời gian</button>
           </div>
           <div id="notebook-content" class="notebook-content"></div>
         </form>
       </dialog>
 
-      <dialog id="deduction" class="deduction-dialog">
-        <div class="deduction-card">
+      <dialog id="inspection" class="full-dialog inspection-dialog">
+        <div class="inspection-card">
           <header>
-            <span>SUY LUẬN CUỐI CÙNG</span>
-            <strong id="deduction-progress">1 / 5</strong>
+            <div><span>KHÁM NGHIỆM VẬT THỂ</span><h2 id="inspection-title">Vật thể chưa xác định</h2></div>
+            <button id="inspection-close" class="close-button" type="button" aria-label="Tạm rời khám nghiệm">×</button>
           </header>
-          <div class="logic-line" aria-hidden="true"><i id="logic-progress"></i></div>
-          <div id="deduction-board" class="deduction-board" aria-label="Bảng liên kết chứng cứ"></div>
-          <p id="deduction-question" class="deduction-question"></p>
-          <div id="deduction-options" class="deduction-options"></div>
-          <p id="deduction-feedback" class="deduction-feedback"></p>
+          <div class="inspection-body">
+            <div id="inspection-visual" class="inspection-visual" aria-hidden="true"><i></i><b id="inspection-glyph">◆</b></div>
+            <div class="inspection-workbench">
+              <p id="inspection-prompt">Quan sát từ nhiều góc trước khi ghi vào hồ sơ.</p>
+              <div id="inspection-actions" class="inspection-actions"></div>
+              <div id="inspection-notes" class="inspection-notes" aria-live="polite"></div>
+              <button id="record-evidence" class="button primary record-evidence" type="button" disabled>Ghi vật chứng vào sổ</button>
+            </div>
+          </div>
         </div>
       </dialog>
 
-      <dialog id="evidence-puzzle" class="evidence-puzzle">
-        <div class="puzzle-card">
+      <dialog id="link-board" class="full-dialog link-dialog">
+        <div class="link-card">
           <header>
-            <div>
-              <span>PHÂN TÍCH CHỨNG CỨ</span>
-              <strong id="puzzle-title">Khôi phục dữ liệu</strong>
-            </div>
-            <button id="puzzle-close" class="close-button" type="button" aria-label="Tạm rời phân tích">×</button>
+            <div><span>BẢNG ĐỐI CHIẾU</span><h2>Ghép lời khai với vật chứng</h2></div>
+            <button id="link-close" class="close-button" type="button" aria-label="Đóng bảng">×</button>
           </header>
-          <div class="puzzle-scope" aria-hidden="true">
-            <i></i><i></i><i></i><i></i><b></b>
+          <p class="board-help">Chọn một mẩu lời khai, rồi chọn một vật chứng liên quan. Ghép sai không làm lộ đáp án.</p>
+          <div class="link-columns">
+            <section><h3>Lời khai</h3><div id="statement-deck" class="card-deck"></div></section>
+            <div class="link-axis" aria-hidden="true"><span>↔</span></div>
+            <section><h3>Vật chứng</h3><div id="evidence-deck" class="card-deck"></div></section>
           </div>
-          <p id="puzzle-prompt" class="puzzle-prompt"></p>
-          <div id="puzzle-options" class="puzzle-options"></div>
-          <p id="puzzle-feedback" class="puzzle-feedback">Quan sát kỹ trước khi kết luận.</p>
+          <div class="link-footer">
+            <p id="link-feedback">Chưa chọn đủ hai mảnh ghép.</p>
+            <button id="test-link" class="button primary" type="button" disabled>Đối chiếu</button>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog id="audio-lab" class="full-dialog audio-dialog">
+        <div class="audio-card">
+          <header>
+            <div><span>PHÁP Y ÂM THANH</span><h2>Khoảng nghỉ biến mất</h2></div>
+            <button id="audio-close" class="close-button" type="button" aria-label="Tạm rời phòng phân tích">×</button>
+          </header>
+          <p>Nghe hai đoạn, rồi kéo bản ghi hiện trường để khớp với nhịp biểu diễn thật. Sai lệch còn lại sẽ cho biết tiếng đàn có phải do con người chơi hay không.</p>
+          <div class="wave-compare">
+            <div class="wave-row"><button type="button" data-play-sample="human">▶ BẢN TẬP CỦA NẠN NHÂN</button><div class="wave human-wave"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+            <div class="wave-row"><button type="button" data-play-sample="scene">▶ ÂM THANH HIỆN TRƯỜNG</button><div id="scene-wave" class="wave scene-wave"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+          </div>
+          <label class="align-control">Dịch bản ghi trên lưới thời gian <input id="audio-align" type="range" min="0" max="100" value="18" /></label>
+          <div class="audio-readout"><span id="audio-offset">Độ lệch: +82 ms</span><b id="audio-result">Chưa khóa được nhịp.</b></div>
+          <button id="lock-audio" class="button primary" type="button">Khóa điểm đồng bộ</button>
+        </div>
+      </dialog>
+
+      <dialog id="reconstruction" class="full-dialog reconstruction-dialog">
+        <div class="reconstruction-card">
+          <header>
+            <div><span>KẾT LUẬN CỦA BẠN</span><h2>Dựng lại năm mắt xích</h2></div>
+            <strong id="reconstruction-progress">0 / 5</strong>
+          </header>
+          <p class="board-help">Chọn một thẻ hồ sơ rồi gắn vào ô thích hợp. Game chỉ chấm cả chuỗi khi bạn tự tin kết luận.</p>
+          <div id="final-slots" class="final-slots"></div>
+          <h3>Thẻ hồ sơ khả dụng</h3>
+          <div id="final-deck" class="final-deck"></div>
+          <div class="reconstruction-footer"><p id="reconstruction-feedback">Hãy dựng lại vụ án bằng chứng cứ bạn đã tự tìm thấy.</p><button id="submit-reconstruction" class="button primary" type="button" disabled>Đối chất</button></div>
         </div>
       </dialog>
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
       <div class="lightning-flash" aria-hidden="true"></div>
     </div>
-
     <script src="./game.js"></script>
   </body>
 </html>
