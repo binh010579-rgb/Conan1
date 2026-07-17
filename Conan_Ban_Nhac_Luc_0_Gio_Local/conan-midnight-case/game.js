@@ -13,6 +13,7 @@
     newGame: $("#new-game-button"),
     continueGame: $("#continue-button"),
     phase: $("#phase-label"),
+    objective: $("#objective-label"),
     sound: $("#sound-button"),
     notebookButton: $("#notebook-button"),
     clueCount: $("#clue-count"),
@@ -25,6 +26,7 @@
     dialogue: $("#dialogue-text"),
     choices: $("#choice-list"),
     next: $("#next-button"),
+    dialoguePanel: $("#dialogue-panel"),
     notebook: $("#notebook"),
     notebookContent: $("#notebook-content"),
     deduction: $("#deduction"),
@@ -295,6 +297,7 @@
       interviews: [...state.interviews],
       mistakes: state.mistakes,
       rank: state.rank,
+      deductionIndex,
     }));
     elements.continueGame.hidden = false;
   }
@@ -320,6 +323,7 @@
     state.interviews = new Set(saved.interviews || []);
     state.mistakes = saved.mistakes || 0;
     state.rank = saved.rank || null;
+    deductionIndex = Number.isInteger(saved.deductionIndex) ? saved.deductionIndex : 0;
   }
 
   function showScreen(name) {
@@ -329,8 +333,29 @@
 
   function setPhase(phase, label) {
     state.phase = phase;
-    elements.phase.textContent = label;
+    elements.phase.textContent = `Giai đoạn: ${label}`;
+    updateObjective();
     saveGame();
+  }
+
+  function updateObjective() {
+    if (!elements.objective) return;
+    const core = coreClueCount();
+    const interviewed = state.interviews.size;
+    const labels = {
+      title: "Sẵn sàng phá án",
+      prologue: "Đọc phần mở đầu • Bấm TIẾP TỤC",
+      investigation: core >= REQUIRED_CLUES.length
+        ? "Đã đủ chứng cứ • Bắt đầu hỏi cung"
+        : `Chứng cứ cốt lõi ${core}/${REQUIRED_CLUES.length}`,
+      interrogation: interviewed >= Object.keys(suspects).length
+        ? "Đã đủ lời khai • Xâu chuỗi sự thật"
+        : `Lời khai ${interviewed}/${Object.keys(suspects).length}`,
+      deduction: "Suy luận để tìm hung thủ",
+      reveal: "Sự thật đang được vạch trần",
+      ending: "Vụ án đã khép lại",
+    };
+    elements.objective.textContent = labels[state.phase] || "Theo dấu sự thật";
   }
 
   function setPortrait(who) {
@@ -425,6 +450,7 @@
 
   function updateCounters() {
     elements.clueCount.textContent = String(state.clues.size);
+    updateObjective();
   }
 
   function changeLocation(location) {
@@ -535,13 +561,14 @@
   function interviewSuspect(id) {
     const suspect = suspects[id];
     state.interviews.add(id);
+    updateObjective();
     saveGame();
     playDialogue(suspect.lines, renderInterrogationMenu);
   }
 
-  function startDeduction() {
+  function startDeduction({ resume = false } = {}) {
+    if (!resume) deductionIndex = 0;
     setPhase("deduction", "Suy luận cuối cùng");
-    deductionIndex = 0;
     elements.deductionFeedback.textContent = "Chọn kết luận phù hợp nhất với những chứng cứ đã thu thập.";
     if (!elements.deduction.open) elements.deduction.showModal();
     renderDeductionQuestion();
@@ -584,6 +611,7 @@
     window.setTimeout(() => playTone(960, 0.14, "sine", 0.026), 100);
     window.setTimeout(() => {
       deductionIndex += 1;
+      saveGame();
       if (deductionIndex >= deductionQuestions.length) finishDeduction();
       else renderDeductionQuestion();
     }, 1500);
@@ -647,9 +675,15 @@
     showScreen("game");
     initAudio();
     updateCounters();
-    if (state.phase === "ending") {
+    if (state.phase === "prologue") {
+      beginPrologue();
+    } else if (state.phase === "ending") {
       showEnding();
-    } else if (state.phase === "interrogation" || state.phase === "deduction" || state.phase === "reveal") {
+    } else if (state.phase === "deduction") {
+      startDeduction({ resume: true });
+    } else if (state.phase === "reveal") {
+      finishDeduction();
+    } else if (state.phase === "interrogation") {
       startInterrogation();
     } else {
       changeLocation(state.location || "studio");
@@ -799,6 +833,16 @@
     elements.newGame.addEventListener("click", newGame);
     elements.continueGame.addEventListener("click", continueGame);
     elements.next.addEventListener("click", nextDialogue);
+    elements.dialoguePanel.addEventListener("click", (event) => {
+      if (event.target.closest("button") || elements.next.hidden) return;
+      nextDialogue();
+    });
+    elements.dialoguePanel.addEventListener("keydown", (event) => {
+      if ((event.key === "Enter" || event.key === " ") && !elements.next.hidden) {
+        event.preventDefault();
+        nextDialogue();
+      }
+    });
     elements.sound.addEventListener("click", toggleSound);
     elements.notebookButton.addEventListener("click", openNotebook);
     $$('[data-location]', elements.locationNav).forEach((button) => {
