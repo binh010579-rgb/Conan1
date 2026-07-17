@@ -1,17 +1,17 @@
 :root {
   color-scheme: dark;
-  --ink: #050b13;
-  --navy: #071525;
-  --panel: rgba(8, 18, 31, 0.94);
-  --panel-soft: rgba(15, 31, 49, 0.84);
-  --cyan: #5bdcff;
-  --cyan-soft: rgba(91, 220, 255, 0.22);
-  --gold: #ffd256;
-  --red: #e84b5f;
-  --paper: #e8edf1;
-  --muted: #93a6b8;
-  --line: rgba(151, 202, 232, 0.2);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ink: #081018;
+  --navy: #091724;
+  --panel: rgba(9, 20, 31, 0.97);
+  --panel-soft: rgba(18, 36, 50, 0.9);
+  --cyan: #70d4e8;
+  --cyan-soft: rgba(112, 212, 232, 0.18);
+  --gold: #e9c46a;
+  --red: #d55c68;
+  --paper: #f1eee6;
+  --muted: #a5b3bd;
+  --line: rgba(164, 205, 220, 0.22);
+  font-family: "Segoe UI", Arial, sans-serif;
   font-synthesis: none;
 }
 
@@ -48,7 +48,7 @@ button:focus-visible {
   position: relative;
   width: 100vw;
   height: 100dvh;
-  min-height: 560px;
+  min-height: 0;
   isolation: isolate;
   overflow: hidden;
   background:
@@ -291,7 +291,7 @@ button:focus-visible {
 }
 
 .game-screen {
-  grid-template-rows: 64px minmax(0, 1fr) 178px;
+  grid-template-rows: 68px minmax(0, 1fr) 188px;
   background: #030912;
 }
 
@@ -319,8 +319,9 @@ button:focus-visible {
 }
 
 .case-header strong {
-  font-family: Georgia, serif;
-  font-size: 1.06rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.12rem;
+  letter-spacing: 0.01em;
 }
 
 .case-status {
@@ -329,12 +330,24 @@ button:focus-visible {
   gap: 8px;
 }
 
+.objective-label {
+  padding: 7px 11px;
+  border: 1px solid rgba(233, 196, 106, 0.35);
+  border-radius: 999px;
+  color: #f4d98d;
+  background: rgba(233, 196, 106, 0.08);
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 #phase-label {
   margin-right: 8px;
   color: var(--muted);
-  font-family: "Courier New", monospace;
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
@@ -710,6 +723,12 @@ button:focus-visible {
     linear-gradient(90deg, rgba(14, 34, 51, 0.98), rgba(4, 11, 20, 0.98)),
     var(--panel);
   box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.38);
+  cursor: pointer;
+}
+
+.dialogue-panel:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -3px;
 }
 
 .portrait {
@@ -846,9 +865,9 @@ button:focus-visible {
   display: block;
   margin-bottom: 10px;
   color: var(--gold);
-  font-family: "Courier New", monospace;
-  font-size: 0.76rem;
-  letter-spacing: 0.15em;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -857,21 +876,31 @@ button:focus-visible {
   min-height: 50px;
   margin: 0;
   color: #d6e0e7;
-  font-size: 0.95rem;
-  line-height: 1.65;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+  line-height: 1.58;
+}
+
+.dialogue-hint {
+  position: absolute;
+  right: 20px;
+  top: 18px;
+  color: #8195a2;
+  font-size: 0.68rem;
 }
 
 .next-button {
   align-self: end;
-  min-width: 92px;
-  height: 44px;
+  min-width: 118px;
+  height: 46px;
   margin: 0 18px 18px 0;
   border: 1px solid rgba(91, 220, 255, 0.35);
   border-radius: 3px;
-  color: var(--cyan);
-  background: rgba(91, 220, 255, 0.06);
-  font-family: "Courier New", monospace;
-  font-size: 0.7rem;
+  color: #101820;
+  background: var(--gold);
+  box-shadow: 0 8px 28px rgba(233, 196, 106, 0.18);
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.1em;
 }
@@ -1188,11 +1217,13 @@ dialog::backdrop {
   .case-header { padding: 0 12px; }
   .case-header > div:first-child strong { display: none; }
   #phase-label { display: none; }
+  .objective-label { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; font-size: 0.66rem; }
   .icon-button { padding: 0 8px; }
   .dialogue-panel { grid-template-columns: 82px minmax(0, 1fr); }
   .portrait { width: 82px; height: 142px; margin-left: 0; transform: scale(0.78); transform-origin: bottom left; }
   .dialogue-copy { padding: 17px 10px 10px 0; }
   .dialogue-copy p { max-height: 88px; overflow: auto; font-size: 0.84rem; line-height: 1.5; }
+  .dialogue-hint { display: none; }
   .next-button { position: absolute; right: 8px; bottom: 8px; height: 34px; min-width: 72px; margin: 0; }
   .choice-list { grid-template-columns: 1fr; max-height: 104px; overflow: auto; }
   .choice-list button { font-size: 0.7rem; }
@@ -1208,6 +1239,16 @@ dialog::backdrop {
   .deduction-question { padding: 24px 18px 18px; }
   .deduction-options { padding: 0 18px; }
   .deduction-feedback { padding: 14px 18px 20px; }
+}
+
+@media (max-height: 760px) and (min-width: 821px) {
+  .game-screen { grid-template-rows: 56px minmax(0, 1fr) 150px; }
+  .case-header { padding: 0 14px; }
+  .portrait { height: 142px; transform: scale(0.86); transform-origin: bottom left; }
+  .dialogue-copy { padding: 15px 16px 12px; }
+  .dialogue-copy p { min-height: 42px; font-size: 0.94rem; line-height: 1.45; }
+  .next-button { height: 40px; margin: 0 14px 14px 0; }
+  .dialogue-hint { top: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
