@@ -35,7 +35,8 @@
 
       <section id="game-screen" class="screen game-screen" aria-label="Màn chơi chính">
         <header class="case-header">
-          <div>
+          <div class="case-identity">
+            <span class="case-emblem" aria-hidden="true">◆</span>
             <span class="case-label">HỒ SƠ 001</span>
             <strong>Bản Nhạc Lúc 0 Giờ</strong>
           </div>
@@ -48,6 +49,8 @@
         </header>
 
         <main id="scene" class="scene scene-hall" aria-live="polite">
+          <div class="scene-backdrop" aria-hidden="true"></div>
+          <div class="scene-depth" aria-hidden="true"></div>
           <div class="scene-sky" aria-hidden="true"></div>
           <div class="scene-building" aria-hidden="true">
             <span class="window w1"></span><span class="window w2"></span><span class="window w3"></span>
@@ -61,6 +64,10 @@
             <span class="coffee-cup"></span>
           </div>
           <div id="hotspot-layer" class="hotspot-layer"></div>
+          <div id="scan-cursor" class="scan-cursor" aria-hidden="true"><i></i></div>
+          <button id="scan-button" class="scan-button" type="button" hidden>
+            <span aria-hidden="true">⌕</span> QUÉT HIỆN TRƯỜNG <kbd>Q</kbd>
+          </button>
           <div id="scene-caption" class="scene-caption">Nhà hát Tsukikage • Đêm mưa</div>
 
           <nav id="location-nav" class="location-nav" aria-label="Chọn địa điểm" hidden>
@@ -71,7 +78,7 @@
         </main>
 
         <section id="dialogue-panel" class="dialogue-panel" aria-label="Hội thoại và hướng dẫn — bấm để tiếp tục" tabindex="0">
-          <span class="dialogue-kicker" aria-hidden="true">HỘI THOẠI • HƯỚNG DẪN</span>
+          <span class="dialogue-kicker" aria-hidden="true">HỒ SƠ TRỰC TIẾP</span>
           <div id="portrait" class="portrait conan" aria-hidden="true">
             <span class="portrait-hair"></span>
             <span class="portrait-face"></span>
@@ -79,8 +86,11 @@
             <span class="portrait-body"></span>
           </div>
           <div class="dialogue-copy">
-            <strong id="speaker-name">Conan</strong>
-            <p id="dialogue-text">Một vụ án bắt đầu từ khoảnh khắc mọi người tin rằng mình đã nghe thấy sự thật.</p>
+            <div class="speaker-line">
+              <strong id="speaker-name">Conan</strong>
+              <span id="speaker-role">Thám tử</span>
+            </div>
+            <p id="dialogue-text" aria-live="polite">Một vụ án bắt đầu từ khoảnh khắc mọi người tin rằng mình đã nghe thấy sự thật.</p>
             <div id="choice-list" class="choice-list"></div>
           </div>
           <span class="dialogue-hint" aria-hidden="true">Bấm khung thoại hoặc phím cách</span>
@@ -113,13 +123,33 @@
             <strong id="deduction-progress">1 / 5</strong>
           </header>
           <div class="logic-line" aria-hidden="true"><i id="logic-progress"></i></div>
+          <div id="deduction-board" class="deduction-board" aria-label="Bảng liên kết chứng cứ"></div>
           <p id="deduction-question" class="deduction-question"></p>
           <div id="deduction-options" class="deduction-options"></div>
           <p id="deduction-feedback" class="deduction-feedback"></p>
         </div>
       </dialog>
 
+      <dialog id="evidence-puzzle" class="evidence-puzzle">
+        <div class="puzzle-card">
+          <header>
+            <div>
+              <span>PHÂN TÍCH CHỨNG CỨ</span>
+              <strong id="puzzle-title">Khôi phục dữ liệu</strong>
+            </div>
+            <button id="puzzle-close" class="close-button" type="button" aria-label="Tạm rời phân tích">×</button>
+          </header>
+          <div class="puzzle-scope" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><b></b>
+          </div>
+          <p id="puzzle-prompt" class="puzzle-prompt"></p>
+          <div id="puzzle-options" class="puzzle-options"></div>
+          <p id="puzzle-feedback" class="puzzle-feedback">Quan sát kỹ trước khi kết luận.</p>
+        </div>
+      </dialog>
+
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
+      <div class="lightning-flash" aria-hidden="true"></div>
     </div>
 
     <script src="./game.js"></script>
