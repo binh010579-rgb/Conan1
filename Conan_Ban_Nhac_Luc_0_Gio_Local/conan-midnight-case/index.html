@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#07111f" />
+    <meta name="description" content="Fan game trinh thám 2D: Bản Nhạc Lúc 0 Giờ." />
+    <title>Conan — Bản Nhạc Lúc 0 Giờ</title>
+    <link rel="icon" href="./favicon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <div class="rain" aria-hidden="true"></div>
+
+      <section id="title-screen" class="screen title-screen active" aria-labelledby="game-title">
+        <div class="title-noir" aria-hidden="true">
+          <span class="clock-face">00:00</span>
+          <span class="piano-keys"></span>
+          <span class="detective-shadow"></span>
+        </div>
+        <div class="title-copy">
+          <p class="eyebrow">VỤ ÁN FAN-MADE • CHƯƠNG 1</p>
+          <h1 id="game-title"><span>CONAN</span>Bản Nhạc Lúc 0 Giờ</h1>
+          <p class="title-lead">
+            Một bản nhạc vang lên từ căn phòng khóa kín. Nhưng người chơi đàn đã chết từ trước đó.
+          </p>
+          <div class="title-actions">
+            <button id="new-game-button" class="button primary" type="button">Bắt đầu điều tra</button>
+            <button id="continue-button" class="button ghost" type="button" hidden>Tiếp tục vụ án</button>
+          </div>
+          <p class="fan-note">Fan game phi thương mại, không liên kết với đơn vị sở hữu Thám tử lừng danh Conan.</p>
+        </div>
+      </section>
+
+      <section id="game-screen" class="screen game-screen" aria-label="Màn chơi chính">
+        <header class="case-header">
+          <div>
+            <span class="case-label">HỒ SƠ 001</span>
+            <strong>Bản Nhạc Lúc 0 Giờ</strong>
+          </div>
+          <div class="case-status">
+            <span id="phase-label">Mở đầu</span>
+            <button id="sound-button" class="icon-button" type="button" aria-label="Bật hoặc tắt âm thanh">ÂM: BẬT</button>
+            <button id="notebook-button" class="icon-button" type="button" aria-label="Mở sổ điều tra">SỔ <b id="clue-count">0</b></button>
+          </div>
+        </header>
+
+        <main id="scene" class="scene scene-hall" aria-live="polite">
+          <div class="scene-sky" aria-hidden="true"></div>
+          <div class="scene-building" aria-hidden="true">
+            <span class="window w1"></span><span class="window w2"></span><span class="window w3"></span>
+            <span class="window w4"></span><span class="window w5"></span><span class="window w6"></span>
+          </div>
+          <div class="scene-room" aria-hidden="true">
+            <span class="wall-clock">00:07</span>
+            <span class="studio-door"></span>
+            <span class="grand-piano"></span>
+            <span class="control-desk"></span>
+            <span class="coffee-cup"></span>
+          </div>
+          <div id="hotspot-layer" class="hotspot-layer"></div>
+          <div id="scene-caption" class="scene-caption">Nhà hát Tsukikage • Đêm mưa</div>
+
+          <nav id="location-nav" class="location-nav" aria-label="Chọn địa điểm" hidden>
+            <button type="button" data-location="studio">Phòng thu A</button>
+            <button type="button" data-location="control">Phòng điều khiển</button>
+            <button type="button" data-location="hall">Hành lang</button>
+          </nav>
+        </main>
+
+        <section id="dialogue-panel" class="dialogue-panel" aria-label="Hội thoại">
+          <div id="portrait" class="portrait conan" aria-hidden="true">
+            <span class="portrait-hair"></span>
+            <span class="portrait-face"></span>
+            <span class="portrait-glasses"></span>
+            <span class="portrait-body"></span>
+          </div>
+          <div class="dialogue-copy">
+            <strong id="speaker-name">Conan</strong>
+            <p id="dialogue-text">Một vụ án bắt đầu từ khoảnh khắc mọi người tin rằng mình đã nghe thấy sự thật.</p>
+            <div id="choice-list" class="choice-list"></div>
+          </div>
+          <button id="next-button" class="next-button" type="button" aria-label="Tiếp tục">TIẾP ▸</button>
+        </section>
+      </section>
+
+      <dialog id="notebook" class="notebook">
+        <form method="dialog" class="notebook-card">
+          <header>
+            <div>
+              <span>SỔ TAY CỦA CONAN</span>
+              <h2>Hồ sơ điều tra</h2>
+            </div>
+            <button class="close-button" value="close" aria-label="Đóng sổ">×</button>
+          </header>
+          <div class="notebook-tabs" role="tablist">
+            <button type="button" class="active" data-tab="clues">Chứng cứ</button>
+            <button type="button" data-tab="suspects">Nghi phạm</button>
+            <button type="button" data-tab="timeline">Dòng thời gian</button>
+          </div>
+          <div id="notebook-content" class="notebook-content"></div>
+        </form>
+      </dialog>
+
+      <dialog id="deduction" class="deduction-dialog">
+        <div class="deduction-card">
+          <header>
+            <span>SUY LUẬN CUỐI CÙNG</span>
+            <strong id="deduction-progress">1 / 5</strong>
+          </header>
+          <div class="logic-line" aria-hidden="true"><i id="logic-progress"></i></div>
+          <p id="deduction-question" class="deduction-question"></p>
+          <div id="deduction-options" class="deduction-options"></div>
+          <p id="deduction-feedback" class="deduction-feedback"></p>
+        </div>
+      </dialog>
+
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </div>
+
+    <script src="./game.js"></script>
+  </body>
+</html>
