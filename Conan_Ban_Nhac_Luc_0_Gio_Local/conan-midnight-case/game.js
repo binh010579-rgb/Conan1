@@ -365,6 +365,7 @@
     const character = characterNames[who] ? who : "narrator";
     elements.portrait.className = `portrait ${character}`;
     elements.portrait.hidden = character === "narrator";
+    elements.dialoguePanel.classList.toggle("narrator-dialogue", character === "narrator");
     elements.speaker.textContent = characterNames[character];
   }
 
