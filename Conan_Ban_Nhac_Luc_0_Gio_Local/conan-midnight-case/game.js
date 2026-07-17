@@ -613,7 +613,11 @@
     if (answer !== item.correct) {
       state.mistakes += 1;
       button.classList.add("wrong");
-      button.disabled = true;
+      if (item.finalChoice) {
+        window.setTimeout(() => button.classList.remove("wrong"), 650);
+      } else {
+        button.disabled = true;
+      }
       elements.deductionFeedback.textContent = item.finalChoice
         ? "Kết luận này chưa khớp toàn bộ hồ sơ. Hãy tự mở Sổ vụ án, đối chiếu lại rồi thử lần nữa."
         : "Chưa hợp lý. Hãy đối chiếu lại sổ chứng cứ và thử một kết luận khác.";
