@@ -205,6 +205,7 @@
   };
 
   const prologue = [
+    { who: "narrator", text: "HƯỚNG DẪN: Khung hội thoại luôn ở phía dưới màn hình. Bấm vào khung, nút TIẾP TỤC hoặc phím cách để đọc tiếp." },
     { who: "narrator", text: "Nhà hát Tsukikage, 0 giờ 07 phút. Bên ngoài, cơn mưa đã xóa sạch mọi dấu chân." },
     { who: "ran", text: "Conan, bác Kogoro chỉ được mời tới buổi ra mắt bản nhạc... sao cảnh sát lại phong tỏa cả nhà hát vậy?" },
     { who: "megure", text: "Nhạc sĩ Kisaragi Daigo được phát hiện tử vong trong Phòng thu A. Căn phòng khóa kín từ bên trong hệ thống." },
@@ -257,7 +258,8 @@
       question: "Ai có đủ quyền truy cập, kiến thức và lời khai mâu thuẫn để thực hiện thủ thuật?",
       options: ["Aoyama Rina", "Kisaragi Misaki", "Nishino Haru", "Senda Yuto"],
       correct: 3,
-      feedback: "Senda Yuto sở hữu thẻ S-04, biết hệ thống MIDI và đã nói dối rằng thiết bị không hoạt động.",
+      finalChoice: true,
+      feedback: "Kết luận đã được khóa. Bây giờ hãy đối chất để kiểm chứng toàn bộ chuỗi suy luận của bạn.",
     },
   ];
 
@@ -283,6 +285,7 @@
   let typingText = "";
   let isTyping = false;
   let toastTimer = 0;
+  let dialogueGuideTimer = 0;
   let deductionIndex = 0;
   let audioContext = null;
   let audioMaster = null;
@@ -351,7 +354,7 @@
       interrogation: interviewed >= Object.keys(suspects).length
         ? "Đã đủ lời khai • Xâu chuỗi sự thật"
         : `Lời khai ${interviewed}/${Object.keys(suspects).length}`,
-      deduction: "Suy luận để tìm hung thủ",
+      deduction: "Tự đối chiếu chứng cứ và chọn thủ phạm",
       reveal: "Sự thật đang được vạch trần",
       ending: "Vụ án đã khép lại",
     };
@@ -415,6 +418,17 @@
     typeLine(text);
     elements.next.hidden = !next;
     renderChoices(choices);
+  }
+
+  function highlightDialogue() {
+    clearTimeout(dialogueGuideTimer);
+    elements.dialoguePanel.classList.remove("guide-attention");
+    void elements.dialoguePanel.offsetWidth;
+    elements.dialoguePanel.classList.add("guide-attention");
+    elements.dialoguePanel.focus({ preventScroll: true });
+    dialogueGuideTimer = window.setTimeout(() => {
+      elements.dialoguePanel.classList.remove("guide-attention");
+    }, 3200);
   }
 
   function playDialogue(lines, callback) {
@@ -552,7 +566,7 @@
     setDialogue(
       "conan",
       allInterviewed
-        ? "Bốn lời khai đã hoàn tất. Trong số họ, có một người nói dối về cả thời gian lẫn hệ thống âm thanh."
+        ? "Bốn lời khai đã hoàn tất. Hãy tự mở Sổ vụ án, đối chiếu toàn bộ chứng cứ rồi đưa ra kết luận của bạn."
         : "Mỗi nghi phạm đều có động cơ, nhưng chỉ một người có thể dựng nên tiếng đàn giả và sửa nhật ký khóa.",
       { choices },
     );
@@ -569,7 +583,7 @@
   function startDeduction({ resume = false } = {}) {
     if (!resume) deductionIndex = 0;
     setPhase("deduction", "Suy luận cuối cùng");
-    elements.deductionFeedback.textContent = "Chọn kết luận phù hợp nhất với những chứng cứ đã thu thập.";
+    elements.deductionFeedback.textContent = "Game không chỉ ra thủ phạm. Hãy tự đối chiếu những gì bạn đã thu thập.";
     if (!elements.deduction.open) elements.deduction.showModal();
     renderDeductionQuestion();
     playTone(220, 0.32, "sawtooth", 0.018);
@@ -581,7 +595,9 @@
     elements.logicProgress.style.width = `${(deductionIndex / deductionQuestions.length) * 100}%`;
     elements.deductionQuestion.textContent = item.question;
     elements.deductionOptions.replaceChildren();
-    elements.deductionFeedback.textContent = "Chọn một đáp án.";
+    elements.deductionFeedback.textContent = item.finalChoice
+      ? "Đây là kết luận của bạn. Không có gợi ý đáp án đúng."
+      : "Chọn kết luận phù hợp nhất với chứng cứ.";
     item.options.forEach((option, index) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -598,7 +614,9 @@
       state.mistakes += 1;
       button.classList.add("wrong");
       button.disabled = true;
-      elements.deductionFeedback.textContent = "Chưa hợp lý. Hãy đối chiếu lại sổ chứng cứ và thử một kết luận khác.";
+      elements.deductionFeedback.textContent = item.finalChoice
+        ? "Kết luận này chưa khớp toàn bộ hồ sơ. Hãy tự mở Sổ vụ án, đối chiếu lại rồi thử lần nữa."
+        : "Chưa hợp lý. Hãy đối chiếu lại sổ chứng cứ và thử một kết luận khác.";
       playTone(138, 0.16, "sawtooth", 0.025);
       saveGame();
       return;
@@ -644,9 +662,11 @@
     setPhase("prologue", "Mở đầu vụ án");
     elements.locationNav.hidden = true;
     changeLocation("hall");
+    window.setTimeout(highlightDialogue, 120);
     playDialogue(prologue, () => {
       changeLocation("studio");
       renderInvestigationPrompt();
+      highlightDialogue();
     });
   }
 
@@ -689,10 +709,15 @@
       changeLocation(state.location || "studio");
       renderInvestigationPrompt();
     }
+    window.setTimeout(() => {
+      if (!elements.deduction.open) highlightDialogue();
+    }, 120);
   }
 
   function returnToTitle() {
     finishTyping();
+    clearTimeout(dialogueGuideTimer);
+    elements.dialoguePanel.classList.remove("guide-attention");
     dialogueQueue = [];
     dialogueCallback = null;
     showScreen("title");
