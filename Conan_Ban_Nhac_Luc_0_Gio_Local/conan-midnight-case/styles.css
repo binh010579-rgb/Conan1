@@ -291,7 +291,7 @@ button:focus-visible {
 }
 
 .game-screen {
-  grid-template-rows: 68px minmax(0, 1fr) 188px;
+  grid-template-rows: 68px minmax(0, 1fr) 214px;
   background: #030912;
 }
 
@@ -714,16 +714,52 @@ button:focus-visible {
 
 .dialogue-panel {
   position: relative;
-  z-index: 11;
+  z-index: 22;
   display: grid;
   grid-template-columns: 130px minmax(0, 1fr) auto;
+  width: min(1180px, calc(100% - 32px));
   min-height: 0;
-  border-top: 1px solid rgba(114, 199, 235, 0.26);
+  margin: 13px auto 17px;
+  overflow: visible;
+  border: 1px solid rgba(114, 199, 235, 0.34);
+  border-radius: 10px;
   background:
-    linear-gradient(90deg, rgba(14, 34, 51, 0.98), rgba(4, 11, 20, 0.98)),
+    linear-gradient(90deg, rgba(17, 41, 60, 0.99), rgba(4, 11, 20, 0.99)),
     var(--panel);
-  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.38);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.52), 0 0 0 1px rgba(233, 196, 106, 0.05) inset;
   cursor: pointer;
+}
+
+.dialogue-kicker {
+  position: absolute;
+  z-index: 4;
+  top: -13px;
+  left: 18px;
+  padding: 5px 10px;
+  border: 1px solid rgba(233, 196, 106, 0.48);
+  border-radius: 999px;
+  color: #ffe6a3;
+  background: #0b1722;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+}
+
+.dialogue-panel.guide-attention {
+  animation: dialogue-guide 1.05s ease-in-out 3;
+}
+
+@keyframes dialogue-guide {
+  0%, 100% {
+    border-color: rgba(114, 199, 235, 0.34);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.52), 0 0 0 rgba(233, 196, 106, 0);
+  }
+  50% {
+    border-color: rgba(255, 222, 132, 0.9);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.52), 0 0 34px rgba(233, 196, 106, 0.3);
+  }
 }
 
 .dialogue-panel:focus-visible {
@@ -865,8 +901,9 @@ button:focus-visible {
   display: block;
   margin-bottom: 10px;
   color: var(--gold);
-  font-family: "Segoe UI", Arial, sans-serif;
-  font-size: 0.82rem;
+  font-family: "Times New Roman", Times, Georgia, serif;
+  font-size: 0.94rem;
+  font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -875,10 +912,10 @@ button:focus-visible {
   max-width: 920px;
   min-height: 50px;
   margin: 0;
-  color: #d6e0e7;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.05rem;
-  line-height: 1.58;
+  color: #f0eee8;
+  font-family: "Times New Roman", Times, Georgia, serif;
+  font-size: 1.16rem;
+  line-height: 1.5;
 }
 
 .dialogue-hint {
@@ -1213,16 +1250,16 @@ dialog::backdrop {
   .title-copy { align-self: end; padding: 34px 24px 56px; background: linear-gradient(transparent, rgba(1, 5, 10, 0.92) 24%); }
   .title-copy h1 { font-size: clamp(3.3rem, 14vw, 6rem); }
   .title-lead { margin: 25px 0; }
-  .game-screen { grid-template-rows: 58px minmax(0, 1fr) 202px; }
+  .game-screen { grid-template-rows: 58px minmax(0, 1fr) 228px; }
   .case-header { padding: 0 12px; }
   .case-header > div:first-child strong { display: none; }
   #phase-label { display: none; }
   .objective-label { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; font-size: 0.66rem; }
   .icon-button { padding: 0 8px; }
-  .dialogue-panel { grid-template-columns: 82px minmax(0, 1fr); }
+  .dialogue-panel { grid-template-columns: 82px minmax(0, 1fr); width: calc(100% - 16px); margin: 12px auto 8px; }
   .portrait { width: 82px; height: 142px; margin-left: 0; transform: scale(0.78); transform-origin: bottom left; }
   .dialogue-copy { padding: 17px 10px 10px 0; }
-  .dialogue-copy p { max-height: 88px; overflow: auto; font-size: 0.84rem; line-height: 1.5; }
+  .dialogue-copy p { max-height: 100px; overflow: auto; font-size: 1rem; line-height: 1.42; }
   .dialogue-hint { display: none; }
   .next-button { position: absolute; right: 8px; bottom: 8px; height: 34px; min-width: 72px; margin: 0; }
   .choice-list { grid-template-columns: 1fr; max-height: 104px; overflow: auto; }
@@ -1242,11 +1279,11 @@ dialog::backdrop {
 }
 
 @media (max-height: 760px) and (min-width: 821px) {
-  .game-screen { grid-template-rows: 56px minmax(0, 1fr) 150px; }
+  .game-screen { grid-template-rows: 56px minmax(0, 1fr) 176px; }
   .case-header { padding: 0 14px; }
   .portrait { height: 142px; transform: scale(0.86); transform-origin: bottom left; }
   .dialogue-copy { padding: 15px 16px 12px; }
-  .dialogue-copy p { min-height: 42px; font-size: 0.94rem; line-height: 1.45; }
+  .dialogue-copy p { min-height: 42px; font-size: 1.02rem; line-height: 1.42; }
   .next-button { height: 40px; margin: 0 14px 14px 0; }
   .dialogue-hint { top: 10px; }
 }
