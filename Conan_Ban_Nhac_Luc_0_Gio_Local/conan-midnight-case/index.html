@@ -40,7 +40,8 @@
             <strong>Bản Nhạc Lúc 0 Giờ</strong>
           </div>
           <div class="case-status">
-            <span id="phase-label">Mở đầu</span>
+            <span id="objective-label" class="objective-label">Đọc phần mở đầu</span>
+            <span id="phase-label">Giai đoạn: Mở đầu</span>
             <button id="sound-button" class="icon-button" type="button" aria-label="Bật hoặc tắt âm thanh">ÂM: BẬT</button>
             <button id="notebook-button" class="icon-button" type="button" aria-label="Mở sổ điều tra">SỔ <b id="clue-count">0</b></button>
           </div>
@@ -69,7 +70,7 @@
           </nav>
         </main>
 
-        <section id="dialogue-panel" class="dialogue-panel" aria-label="Hội thoại">
+        <section id="dialogue-panel" class="dialogue-panel" aria-label="Hội thoại — bấm để tiếp tục" tabindex="0">
           <div id="portrait" class="portrait conan" aria-hidden="true">
             <span class="portrait-hair"></span>
             <span class="portrait-face"></span>
@@ -81,7 +82,8 @@
             <p id="dialogue-text">Một vụ án bắt đầu từ khoảnh khắc mọi người tin rằng mình đã nghe thấy sự thật.</p>
             <div id="choice-list" class="choice-list"></div>
           </div>
-          <button id="next-button" class="next-button" type="button" aria-label="Tiếp tục">TIẾP ▸</button>
+          <span class="dialogue-hint" aria-hidden="true">Bấm khung thoại hoặc phím cách</span>
+          <button id="next-button" class="next-button" type="button" aria-label="Tiếp tục">TIẾP TỤC ▸</button>
         </section>
       </section>
 
