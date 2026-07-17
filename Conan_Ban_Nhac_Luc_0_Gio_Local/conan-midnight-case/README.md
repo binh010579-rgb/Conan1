@@ -1,33 +1,41 @@
 # Conan — Bản Nhạc Lúc 0 Giờ
 
-Fan game trinh thám 2D chơi trực tiếp trong trình duyệt. Chương đầu là một vụ án nguyên bản tại Nhà hát Tsukikage: người chơi điều khiển Conan, khám phá hiện trường, thu thập chứng cứ, hỏi cung bốn nghi phạm và hoàn thành chuỗi suy luận cuối cùng.
+Fan game trinh thám 2D chơi trực tiếp trong trình duyệt. Chương đầu là một vụ án nguyên bản tại Nhà hát Tsukikage: khám phá hiện trường, phân tích dữ liệu, dùng chứng cứ kiểm tra lời khai và tự kết luận ai là thủ phạm.
 
 ## Chơi local
 
 1. Giải nén toàn bộ thư mục.
 2. Nhấp đúp `index.html` và mở bằng Chrome hoặc Edge.
-3. Chọn **Bắt đầu điều tra**.
+3. Chọn **Bắt đầu điều tra**. Nếu từng chơi bản cũ, hãy chọn bắt đầu mới để dùng tiến độ V2.
 
 Game không cần cài Node.js, không gọi API và không tải tài nguyên từ Internet.
+
+### Điều khiển
+
+- Bấm khung hội thoại, nút **TIẾP TỤC** hoặc phím `Space` để đọc tiếp.
+- Bấm **QUÉT HIỆN TRƯỜNG** hoặc phím `Q` để làm lộ các điểm đáng ngờ.
+- Bấm **SỔ** hoặc phím `N` để xem chứng cứ, lời khai và dòng thời gian.
+- Trong suy luận cuối, nối đúng hai chứng cứ trước khi chọn kết luận.
 
 ## Cấu trúc
 
 - `index.html` — giao diện và các lớp màn hình.
-- `styles.css` — toàn bộ hình ảnh 2D, hoạt ảnh và responsive; không dùng ảnh ngoài.
+- `assets/` — bối cảnh và chân dung anime-noir nguyên bản, đã nén để chơi local nhanh.
+- `styles.css` — bố cục visual novel, hoạt ảnh, màu sắc và responsive.
 - `game.js` — cốt truyện, chứng cứ, nghi phạm, hội thoại, lưu game và hệ thống suy luận.
 - `AGENTS.md` — hướng dẫn ngắn cho Codex khi sửa game sau này.
 - `NOTICE.md` — ghi chú fan project và quyền sở hữu nhân vật.
 
 ## Gameplay hiện có
 
-- Mở đầu theo phong cách visual novel.
+- Giao diện visual novel anime-noir với ba bối cảnh và tám chân dung nguyên bản.
 - Ba địa điểm có điểm tương tác: Phòng thu A, Phòng điều khiển và Hành lang.
-- Chín chứng cứ, sáu chứng cứ cốt lõi.
-- Bốn cuộc hỏi cung.
-- Năm câu suy luận có phản hồi đúng/sai.
+- Chín chứng cứ, bốn màn phân tích dữ liệu và sáu chứng cứ cốt lõi.
+- Bốn cuộc hỏi cung; mỗi lời khai phải được kiểm tra bằng chứng cứ.
+- Năm chặng suy luận: nối cặp manh mối rồi mới được đưa ra kết luận.
 - Xếp hạng S/A/B dựa trên số lần suy luận sai.
 - Lưu tiến độ bằng `localStorage`.
-- Âm thanh không bản quyền được tổng hợp trực tiếp bằng Web Audio.
+- Nhạc piano trinh thám nguyên bản được tổng hợp trực tiếp bằng Web Audio.
 - Hỗ trợ máy tính và điện thoại.
 
 ## Đưa lên GitHub
