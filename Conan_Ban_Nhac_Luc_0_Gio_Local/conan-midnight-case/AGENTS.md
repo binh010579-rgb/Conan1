@@ -10,7 +10,7 @@ Maintain a dependency-free 2D browser detective game that can run by double-clic
 - `assets/`: compressed original scene and portrait artwork. Do not replace it with official or hotlinked copyrighted artwork.
 - `styles.css`: visual-novel layout, responsive behavior, atmosphere, and interface animation.
 - `game.js`: all state, content, clues, interviews, deduction questions, audio, and save logic.
-- Save key: `conan-midnight-case-save-v3` in `localStorage`.
+- Save key: `conan-midnight-case-save-v4` in `localStorage`.
 
 ## Editing rules
 
@@ -18,11 +18,11 @@ Maintain a dependency-free 2D browser detective game that can run by double-clic
 - Keep the game playable on a 360px-wide phone and a 1280px desktop.
 - This is a private, non-commercial fan prototype. Do not add official images, music, video, or extracted franchise assets.
 - New cases should use new suspects and original mysteries even when established Conan characters frame the investigation.
-- When changing clue IDs, update `REQUIRED_CLUES`, deductions, notebook content, and save migration behavior together.
+- When changing clue IDs, update `CORE_EVIDENCE`, `REQUIRED_LINKS`, timeline events, notebook content, and save behavior together.
 
 ## Verification
 
 1. Run `node --check game.js`.
 2. Open `index.html` directly in Chromium.
-3. Complete prologue, collect all four testimonies, inspect eight core objects, solve audio forensics, lock the five required links, reconstruct all five final slots, and reach an ending.
+3. Complete prologue, pin all five required statements, finish all five evidence mini-games, inspect eight core objects, solve the five-slot timeline, lock the five required links, reconstruct all five final slots, and reach an ending.
 4. Confirm the browser console has no errors at desktop and mobile widths.
