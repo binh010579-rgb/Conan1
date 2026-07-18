@@ -6,15 +6,18 @@ Fan game trinh thám 2D chơi trực tiếp trong trình duyệt. Chương đầ
 
 1. Giải nén toàn bộ thư mục.
 2. Nhấp đúp `index.html` và mở bằng Chrome hoặc Edge.
-3. Chọn **Bắt đầu vụ án**. Bản V3 dùng vùng lưu riêng nên không bị lẫn tiến độ V2.
+3. Chọn **Bắt đầu vụ án**. Bản V4 dùng vùng lưu riêng nên không bị lẫn tiến độ cũ.
 
 Game không cần cài Node.js, không gọi API và không tải tài nguyên từ Internet.
 
 ### Điều khiển
 
 - Bấm khung hội thoại, nút **TIẾP TỤC** hoặc phím `Space` để đọc tiếp.
+- Trong lúc hỏi cung, bấm **GHIM CÂU ĐÁNG NGỜ** ngay khi nghi phạm nói một chi tiết có thể kiểm chứng. Nếu bỏ lỡ, bạn phải nghe lại lời khai.
 - Rê chuột hoặc chạm trực tiếp vào đồ vật có thật trong ba cảnh; vật khả nghi chỉ phản sáng nhẹ, không có dấu `+`.
+- Thao tác trực tiếp trên vật chứng: lau đồng hồ, soi UV cây đàn, lắp quả nặng, ráp log và đồng bộ hai bản ghi.
 - Bấm **SỔ** hoặc phím `N` để xem riêng Lời khai, Vật chứng, Mâu thuẫn và Dòng thời gian.
+- Khi đủ vật chứng, tự kéo-thả năm sự kiện vào đúng mốc giờ trước khi được đối chất.
 - Trên bảng đối chiếu, ghép một mẩu lời khai với một vật chứng. Ghép sai không làm lộ đáp án.
 - Ở kết luận cuối, tự gắn thẻ hồ sơ vào năm mắt xích; đoán đúng tên nhưng sai phương thức vẫn không phá được án.
 
@@ -30,11 +33,13 @@ Game không cần cài Node.js, không gọi API và không tải tài nguyên t
 ## Gameplay hiện có
 
 - Giao diện visual novel anime-noir với ba bối cảnh và tám chân dung nguyên bản.
-- Vòng chơi bốn giai đoạn: lấy lời khai → khám phá vật thể → đối chiếu mâu thuẫn → dựng lại vụ án.
+- Vòng chơi năm giai đoạn: hỏi cung chủ động → khám nghiệm bằng mini-game → xếp dòng thời gian → đối chiếu mâu thuẫn → dựng lại vụ án.
 - Ba địa điểm có vùng tương tác bám theo đồ vật thật: Phòng thu A, Phòng điều khiển và Hành lang.
 - Mười vật thể có thể khám nghiệm; tên và ý nghĩa chỉ hiện sau khi người chơi tự kiểm tra đủ chi tiết.
-- Bốn cuộc lấy lời khai không chèn câu hỏi trắc nghiệm; lời nói được lưu nguyên văn trong một mục riêng.
+- Bốn cuộc hỏi cung có thanh căng thẳng và cơ chế ghim câu đáng ngờ đúng lúc; lời nói vẫn được lưu nguyên văn trong một mục riêng.
+- Năm thử nghiệm vật chứng khác nhau, được thiết kế để thay thao tác “bấm đọc”: lau kính, đèn UV, lắp vật thể, ráp log và pháp y âm thanh.
 - Phòng pháp y âm thanh cho phép nghe, dịch và đồng bộ hai bản ghi để nhận ra nhịp MIDI máy móc.
+- Bàn dòng thời gian hỗ trợ kéo-thả trên máy tính và chọn-thẻ/chạm-ô trên điện thoại; chấm cả chuỗi mà không lộ ô sai.
 - Bảng mâu thuẫn dùng cơ chế ghép thẻ, không dùng đáp án chọn sẵn và không tiết lộ cặp đúng khi ghép sai.
 - Kết luận cuối yêu cầu dựng đủ thời điểm, thủ thuật âm thanh, phòng kín, hung khí và thủ phạm.
 - Xếp hạng S/A/B/C dựa trên số lần đối chiếu và suy luận sai.
