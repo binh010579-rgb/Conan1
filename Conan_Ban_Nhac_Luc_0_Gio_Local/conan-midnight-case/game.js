@@ -273,7 +273,7 @@
   let queue = [], queueDone = null, typingTimer = 0, fullText = "", typing = false, toastTimer = 0;
   let pendingEvidence = null, selectedStatement = null, selectedEvidence = null, selectedFinalCard = null;
   let currentInterviewId = null, currentDialogueLine = null, currentPinAttempted = false, selectedTimelineEvent = null, currentVoiceLine = null;
-  let voiceSequence = 0, vietnameseVoices = [];
+  let voiceSequence = 0, vietnameseVoices = [], voiceWaitTimer = 0, pendingVoiceRequest = null, voiceUnavailableNotified = false;
   let audioContext = null, masterGain = null, scoreTimer = 0, scoreStep = 0;
 
   function serialize() {
@@ -315,10 +315,19 @@
 
   function refreshVietnameseVoices() {
     vietnameseVoices = supportsSpeechSynthesis()
-      ? window.speechSynthesis.getVoices().filter((voice) => voice.lang?.toLowerCase().startsWith("vi"))
+      ? window.speechSynthesis.getVoices().filter((voice) => {
+        const language = voice.lang?.toLowerCase().replace("_", "-") || "";
+        const name = voice.name || "";
+        return language === "vi" || language.startsWith("vi-")
+          || /vietnam|việt|hoài\s*my|hoaimy|nam\s*minh|namminh|microsoft\s+an\b/i.test(name);
+      })
       : [];
     el.replayVoice.hidden = !vietnameseVoices.length;
     el.replayVoice.disabled = !state.sound;
+    if (vietnameseVoices.length) {
+      voiceUnavailableNotified = false;
+      el.sound.title = `Giọng Việt: ${vietnameseVoices[0].name || "đã sẵn sàng"}`;
+    }
     return vietnameseVoices;
   }
 
@@ -353,6 +362,50 @@
     }, reduced ? 1 : 16);
   }
 
+  function cancelVoiceWait() {
+    clearTimeout(voiceWaitTimer); voiceWaitTimer = 0; pendingVoiceRequest = null;
+  }
+
+  function waitForVietnameseVoice(text, who, token) {
+    const request = { text, who, token, attempts: 0 };
+    pendingVoiceRequest = request;
+    const poll = () => {
+      if (pendingVoiceRequest !== request || token !== voiceSequence || !typing || !state.sound) return;
+      if (vietnameseVoiceFor(who)) {
+        pendingVoiceRequest = null; clearTimeout(voiceWaitTimer); voiceWaitTimer = 0;
+        clearInterval(typingTimer); el.dialogue.textContent = "";
+        speakLine(text, who, token); return;
+      }
+      request.attempts += 1;
+      if (request.attempts >= 12) {
+        pendingVoiceRequest = null; el.sound.title = "Chrome chưa tìm thấy giọng đọc tiếng Việt trên thiết bị";
+        startTypewriter(text, token);
+        if (!voiceUnavailableNotified) {
+          voiceUnavailableNotified = true;
+          toast("Chrome chưa tải được giọng Việt. Game vẫn hiện phụ đề; hãy thử bấm ÂM: TẮT rồi BẬT sau vài giây.");
+        }
+        return;
+      }
+      voiceWaitTimer = setTimeout(poll, 200);
+    };
+    poll();
+  }
+
+  function handleVoicesChanged() {
+    refreshVietnameseVoices();
+    const request = pendingVoiceRequest;
+    if (!request || !vietnameseVoices.length || request.token !== voiceSequence || !typing || !state.sound) return;
+    pendingVoiceRequest = null; clearTimeout(voiceWaitTimer); voiceWaitTimer = 0;
+    clearInterval(typingTimer); el.dialogue.textContent = "";
+    speakLine(request.text, request.who, request.token);
+  }
+
+  function playLineWithVoiceFallback(text, who, token) {
+    if (speakLine(text, who, token)) return;
+    if (state.sound && supportsSpeechSynthesis()) waitForVietnameseVoice(text, who, token);
+    else startTypewriter(text, token);
+  }
+
   function speakLine(text, who = "narrator", token = voiceSequence) {
     currentVoiceLine = { text, who };
     const voice = vietnameseVoiceFor(who);
@@ -378,16 +431,17 @@
       if (token !== voiceSequence || !typing) return;
       startTypewriter(text, token, el.dialogue.textContent.length);
     };
+    window.speechSynthesis.resume?.();
     window.speechSynthesis.speak(utterance);
     return true;
   }
 
   function replayCurrentVoice() {
     if (!currentVoiceLine) return;
-    clearInterval(typingTimer); const token = ++voiceSequence;
+    clearInterval(typingTimer); cancelVoiceWait(); const token = ++voiceSequence;
     if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
     fullText = currentVoiceLine.text; el.dialogue.textContent = ""; typing = true;
-    if (!speakLine(currentVoiceLine.text, currentVoiceLine.who, token)) startTypewriter(currentVoiceLine.text, token);
+    playLineWithVoiceFallback(currentVoiceLine.text, currentVoiceLine.who, token);
   }
 
   function applyTextSize(sizeId) {
@@ -430,16 +484,16 @@
 
   function finishTyping() {
     if (!typing) return false;
-    clearInterval(typingTimer); voiceSequence += 1;
+    clearInterval(typingTimer); cancelVoiceWait(); voiceSequence += 1;
     if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
     el.dialogue.textContent = fullText; typing = false; return true;
   }
 
   function typeLine(text, who = "narrator") {
-    clearInterval(typingTimer); const token = ++voiceSequence;
+    clearInterval(typingTimer); cancelVoiceWait(); const token = ++voiceSequence;
     if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
     fullText = text; el.dialogue.textContent = ""; typing = true;
-    if (!speakLine(text, who, token)) startTypewriter(text, token);
+    playLineWithVoiceFallback(text, who, token);
   }
 
   function renderChoices(items = []) {
@@ -994,7 +1048,7 @@
   function toggleSound() {
     state.sound = !state.sound; ensureAudio(); masterGain.gain.setTargetAtTime(state.sound ? .7 : 0, audioContext.currentTime, .04);
     if (!state.sound && supportsSpeechSynthesis()) {
-      voiceSequence += 1; window.speechSynthesis.cancel();
+      cancelVoiceWait(); voiceSequence += 1; window.speechSynthesis.cancel();
       if (typing) { clearInterval(typingTimer); el.dialogue.textContent = fullText; typing = false; }
     }
     if (state.sound) replayCurrentVoice();
@@ -1045,7 +1099,7 @@
   applyTextSize(localStorage.getItem(TEXT_SIZE_KEY) || "large");
   if (supportsSpeechSynthesis()) {
     refreshVietnameseVoices();
-    window.speechSynthesis.addEventListener?.("voiceschanged", refreshVietnameseVoices);
+    window.speechSynthesis.addEventListener?.("voiceschanged", handleVoicesChanged);
   } else {
     el.replayVoice.hidden = true;
   }
