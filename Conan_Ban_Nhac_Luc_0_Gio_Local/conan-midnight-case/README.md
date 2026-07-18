@@ -14,7 +14,7 @@ Game không cần cài Node.js, không gọi API và không tải tài nguyên t
 
 - Bấm khung hội thoại, nút **TIẾP TỤC** hoặc phím `Space` để đọc tiếp.
 - Bấm **CHỮ: LỚN** trên thanh hồ sơ để chuyển giữa ba cỡ chữ: vừa, lớn và rất lớn. Game ghi nhớ lựa chọn này cho lần chơi sau.
-- Khi trình duyệt có giọng Việt, phần hướng dẫn và lời khai được đọc cùng lúc với phụ đề. Bấm **↻ NGHE LẠI** để phát lại; nút **ÂM** điều khiển cả nhạc, hiệu ứng và giọng đọc.
+- Game chỉ dùng giọng có mã tiếng Việt (`vi-VN`) và phụ đề hiện theo đúng từng từ đang được đọc. Bấm **↻ NGHE LẠI** để phát lại; nút **ÂM** điều khiển cả nhạc, hiệu ứng và giọng đọc. Nếu thiết bị không có giọng Việt, game giữ phụ đề và không tự chuyển sang giọng ngoại ngữ.
 - Trong lúc hỏi cung, bấm **GHIM CÂU ĐÁNG NGỜ** ngay khi nghi phạm nói một chi tiết có thể kiểm chứng. Nếu bỏ lỡ, bạn phải nghe lại lời khai.
 - Rê chuột hoặc chạm trực tiếp vào đồ vật có thật trong ba cảnh; vật khả nghi chỉ phản sáng nhẹ, không có dấu `+`.
 - Thao tác trực tiếp trên vật chứng: lau đồng hồ, soi UV cây đàn, lắp quả nặng, ráp log và đồng bộ hai bản ghi.
