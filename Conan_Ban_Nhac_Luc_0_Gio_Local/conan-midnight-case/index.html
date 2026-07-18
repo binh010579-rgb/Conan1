@@ -59,6 +59,10 @@
           <div id="portrait" class="portrait conan" aria-hidden="true"></div>
           <div class="dialogue-copy">
             <div class="speaker-line"><strong id="speaker-name">Edogawa Conan</strong><span id="speaker-role">Thám tử</span></div>
+            <div id="interrogation-tools" class="interrogation-tools" hidden>
+              <span>CĂNG THẲNG</span><i><b id="tension-fill"></b></i>
+              <button id="pin-statement" type="button">GHIM CÂU NÀY</button>
+            </div>
             <p id="dialogue-text" aria-live="polite">Sự thật không nằm trong một lựa chọn có sẵn. Nó nằm ở cách các chi tiết va vào nhau.</p>
             <div id="choice-list" class="choice-list"></div>
           </div>
@@ -90,7 +94,10 @@
             <button id="inspection-close" class="close-button" type="button" aria-label="Tạm rời khám nghiệm">×</button>
           </header>
           <div class="inspection-body">
-            <div id="inspection-visual" class="inspection-visual" aria-hidden="true"><i></i><b id="inspection-glyph">◆</b></div>
+            <div id="inspection-visual" class="inspection-visual">
+              <i aria-hidden="true"></i><b id="inspection-glyph" aria-hidden="true">◆</b>
+              <div id="mini-game-host" class="mini-game-host" hidden></div>
+            </div>
             <div class="inspection-workbench">
               <p id="inspection-prompt">Quan sát từ nhiều góc trước khi ghi vào hồ sơ.</p>
               <div id="inspection-actions" class="inspection-actions"></div>
@@ -134,6 +141,23 @@
           <label class="align-control">Dịch bản ghi trên lưới thời gian <input id="audio-align" type="range" min="0" max="100" value="18" /></label>
           <div class="audio-readout"><span id="audio-offset">Độ lệch: +82 ms</span><b id="audio-result">Chưa khóa được nhịp.</b></div>
           <button id="lock-audio" class="button primary" type="button">Khóa điểm đồng bộ</button>
+        </div>
+      </dialog>
+
+      <dialog id="timeline-lab" class="full-dialog timeline-dialog">
+        <div class="timeline-card">
+          <header>
+            <div><span>TÁI DỰNG ĐÊM GÂY ÁN</span><h2>Dòng thời gian 23 giờ</h2></div>
+            <button id="timeline-close" class="close-button" type="button" aria-label="Tạm rời dòng thời gian">×</button>
+          </header>
+          <p class="board-help">Kéo từng sự kiện vào đúng mốc giờ. Trên điện thoại: chọn thẻ rồi chạm vào một ô thời gian.</p>
+          <div id="timeline-slots" class="timeline-slots"></div>
+          <h3>Những sự kiện đã xác minh</h3>
+          <div id="timeline-deck" class="timeline-deck"></div>
+          <div class="timeline-footer">
+            <p id="timeline-feedback">Dòng thời gian phải khớp trước khi bạn có thể đối chất.</p>
+            <button id="check-timeline" class="button primary" type="button" disabled>Kiểm tra dòng thời gian</button>
+          </div>
         </div>
       </dialog>
 
