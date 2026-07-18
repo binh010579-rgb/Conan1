@@ -29,7 +29,8 @@
     sound: $("#sound-button"), textSize: $("#text-size-button"), notebookButton: $("#notebook-button"), recordCount: $("#record-count"),
     scene: $("#scene"), sceneCaption: $("#scene-caption"), sceneTip: $("#scene-tip"), objectLayer: $("#object-layer"),
     locationNav: $("#location-nav"), portrait: $("#portrait"), speaker: $("#speaker-name"), speakerRole: $("#speaker-role"),
-    dialogue: $("#dialogue-text"), choices: $("#choice-list"), next: $("#next-button"), dialoguePanel: $("#dialogue-panel"), replayVoice: $("#replay-voice"),
+    dialogue: $("#dialogue-text"), choices: $("#choice-list"), next: $("#next-button"), dialoguePanel: $("#dialogue-panel"),
+    dialogueHint: $("#dialogue-hint"), replayVoice: $("#replay-voice"),
     interrogationTools: $("#interrogation-tools"), tensionFill: $("#tension-fill"), pinStatement: $("#pin-statement"),
     notebook: $("#notebook"), notebookContent: $("#notebook-content"), inspection: $("#inspection"),
     inspectionTitle: $("#inspection-title"), inspectionVisual: $("#inspection-visual"), inspectionGlyph: $("#inspection-glyph"),
@@ -271,10 +272,12 @@
   };
 
   let queue = [], queueDone = null, typingTimer = 0, fullText = "", typing = false, toastTimer = 0;
+  let dialogueAdvanceTimer = 0, currentLineComplete = null, dialogueIsSequence = false;
   let pendingEvidence = null, selectedStatement = null, selectedEvidence = null, selectedFinalCard = null;
   let currentInterviewId = null, currentDialogueLine = null, currentPinAttempted = false, selectedTimelineEvent = null, currentVoiceLine = null;
   let voiceSequence = 0, vietnameseVoices = [], voiceWaitTimer = 0, pendingVoiceRequest = null, voiceUnavailableNotified = false;
   let cloudVoiceController = null, cloudVoiceSource = null, cloudVoiceFrame = 0;
+  const cloudVoiceCache = new Map();
   let audioContext = null, masterGain = null, scoreTimer = 0, scoreStep = 0;
 
   function serialize() {
@@ -363,7 +366,7 @@
     typingTimer = setInterval(() => {
       if (token !== voiceSequence || !typing) { clearInterval(typingTimer); return; }
       index = Math.min(text.length, index + (reduced ? text.length : 2)); el.dialogue.textContent = text.slice(0, index);
-      if (index >= text.length) { clearInterval(typingTimer); typing = false; }
+      if (index >= text.length) { clearInterval(typingTimer); typing = false; completeCurrentLine(token); }
     }, reduced ? 1 : 16);
   }
 
@@ -393,18 +396,40 @@
     }));
   }
 
+  function cloudVoiceKey(text, who) {
+    return `${who}\u0000${text}`;
+  }
+
+  function loadCloudVoice(text, who) {
+    const key = cloudVoiceKey(text, who);
+    if (!cloudVoiceCache.has(key)) {
+      const query = new URLSearchParams({ text, who });
+      const request = window.fetch(`/api/tts?${query}`)
+        .then((response) => {
+          if (!response.ok) throw new Error(`TTS ${response.status}`);
+          return response.json();
+        })
+        .catch((error) => {
+          cloudVoiceCache.delete(key);
+          throw error;
+        });
+      cloudVoiceCache.set(key, request);
+    }
+    return cloudVoiceCache.get(key);
+  }
+
+  function prefetchCloudVoice(line) {
+    if (!line || !state.sound || !supportsCloudVoice() || vietnameseVoiceFor(line.who)) return;
+    loadCloudVoice(line.text, line.who).catch(() => { /* Playback will retry and show the fallback if needed. */ });
+  }
+
   function playCloudVoice(text, who, token) {
     if (!state.sound || !supportsCloudVoice()) return false;
     stopCloudVoice();
     const controller = new AbortController(); cloudVoiceController = controller;
-    el.replayVoice.hidden = false; el.replayVoice.disabled = true; el.replayVoice.textContent = "… TẢI GIỌNG";
-    const query = new URLSearchParams({ text, who });
+    el.replayVoice.hidden = true; el.replayVoice.disabled = true; el.replayVoice.textContent = "↻ NGHE LẠI";
 
-    window.fetch(`/api/tts?${query}`, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error(`TTS ${response.status}`);
-        return response.json();
-      })
+    loadCloudVoice(text, who)
       .then(async (payload) => {
         if (controller.signal.aborted || token !== voiceSequence || !typing || !state.sound) return;
         ensureAudio();
@@ -417,7 +442,7 @@
           : fallbackTimings(text, buffer.duration);
         const startedAt = audioContext.currentTime;
         cloudVoiceSource = source; cloudVoiceController = null;
-        el.replayVoice.disabled = false; el.replayVoice.textContent = "↻ NGHE LẠI";
+        el.replayVoice.hidden = false; el.replayVoice.disabled = false; el.replayVoice.textContent = "↻ NGHE LẠI";
         el.sound.title = `Giọng Việt trực tuyến: ${payload.voice || "đã sẵn sàng"}`;
 
         const syncSubtitle = () => {
@@ -434,13 +459,13 @@
         source.onended = () => {
           if (token !== voiceSequence || cloudVoiceSource !== source) return;
           cancelAnimationFrame(cloudVoiceFrame); cloudVoiceFrame = 0; cloudVoiceSource = null;
-          el.dialogue.textContent = text; typing = false;
+          el.dialogue.textContent = text; typing = false; completeCurrentLine(token);
         };
         source.start(); syncSubtitle();
       })
       .catch((error) => {
         if (error.name === "AbortError" || token !== voiceSequence || !typing) return;
-        cloudVoiceController = null; el.replayVoice.disabled = !state.sound; el.replayVoice.textContent = "↻ NGHE LẠI";
+        cloudVoiceController = null; el.replayVoice.hidden = false; el.replayVoice.disabled = !state.sound; el.replayVoice.textContent = "↻ NGHE LẠI";
         if (state.sound && supportsSpeechSynthesis()) waitForVietnameseVoice(text, who, token);
         else startTypewriter(text, token, el.dialogue.textContent.length);
         if (!voiceUnavailableNotified) {
@@ -497,7 +522,7 @@
   }
 
   function speakLine(text, who = "narrator", token = voiceSequence) {
-    currentVoiceLine = { text, who };
+    currentVoiceLine = { text, who, onComplete: currentLineComplete };
     const voice = vietnameseVoiceFor(who);
     if (!voice || !state.sound) return false;
 
@@ -515,7 +540,7 @@
     };
     utterance.onend = () => {
       if (token !== voiceSequence || !typing) return;
-      el.dialogue.textContent = text; typing = false;
+      el.dialogue.textContent = text; typing = false; completeCurrentLine(token);
     };
     utterance.onerror = () => {
       if (token !== voiceSequence || !typing) return;
@@ -528,9 +553,11 @@
 
   function replayCurrentVoice() {
     if (!currentVoiceLine) return;
+    clearDialogueAdvance();
     clearInterval(typingTimer); cancelVoiceWait(); stopCloudVoice(); const token = ++voiceSequence;
     if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
-    fullText = currentVoiceLine.text; el.dialogue.textContent = ""; typing = true;
+    fullText = currentVoiceLine.text; currentLineComplete = currentVoiceLine.onComplete || null;
+    el.dialogue.textContent = ""; typing = true;
     playLineWithVoiceFallback(currentVoiceLine.text, currentVoiceLine.who, token);
   }
 
@@ -572,17 +599,30 @@
     [el.speaker.textContent, el.speakerRole.textContent] = characters[id];
   }
 
-  function finishTyping() {
-    if (!typing) return false;
-    clearInterval(typingTimer); cancelVoiceWait(); stopCloudVoice(); voiceSequence += 1;
-    if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
-    el.dialogue.textContent = fullText; typing = false; return true;
+  function clearDialogueAdvance() {
+    clearTimeout(dialogueAdvanceTimer); dialogueAdvanceTimer = 0;
   }
 
-  function typeLine(text, who = "narrator") {
+  function completeCurrentLine(token) {
+    if (token !== voiceSequence) return;
+    const complete = currentLineComplete; currentLineComplete = null;
+    if (complete) complete();
+  }
+
+  function finishTyping() {
+    if (!typing) return false;
+    const complete = currentLineComplete; currentLineComplete = null;
+    clearInterval(typingTimer); cancelVoiceWait(); stopCloudVoice(); voiceSequence += 1;
+    if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
+    el.dialogue.textContent = fullText; typing = false; if (complete) complete(); return true;
+  }
+
+  function typeLine(text, who = "narrator", onComplete = null) {
+    clearDialogueAdvance();
     clearInterval(typingTimer); cancelVoiceWait(); stopCloudVoice(); const token = ++voiceSequence;
     if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
-    fullText = text; el.dialogue.textContent = ""; typing = true;
+    fullText = text; currentLineComplete = onComplete; currentVoiceLine = { text, who, onComplete };
+    el.dialogue.textContent = ""; typing = true;
     playLineWithVoiceFallback(text, who, token);
   }
 
@@ -596,18 +636,66 @@
   }
 
   function setDialogue(who, text, { next = false, choices = [] } = {}) {
-    currentDialogueLine = null; currentPinAttempted = false; hideInterrogationTools(); setPortrait(who); typeLine(text, who); el.next.hidden = !next; renderChoices(choices);
+    clearDialogueAdvance(); queue = []; queueDone = null; dialogueIsSequence = false;
+    currentDialogueLine = null; currentPinAttempted = false; hideInterrogationTools(); setPortrait(who); typeLine(text, who);
+    el.next.hidden = !next; el.dialogueHint.textContent = choices.length ? "CHỌN HÀNH ĐỘNG ĐỂ TIẾP TỤC" : next ? "BẤM ĐỂ TIẾP TỤC" : "BẤM ĐỂ TUA CÂU";
+    renderChoices(choices);
   }
 
-  function playDialogue(lines, done) { queue = [...lines]; queueDone = done || null; nextLine(); }
+  function groupLinkedDialogue(lines) {
+    return lines.reduce((groups, source) => {
+      const line = { ...source };
+      const previous = groups.at(-1);
+      const combinedLength = previous ? previous.text.length + line.text.length + 1 : Infinity;
+      const linked = previous && previous.who === line.who && !previous.pin && !line.pin
+        && !previous.breakAfter && !line.breakBefore && combinedLength <= 390;
+      if (linked) {
+        previous.text = `${previous.text.trim()} ${line.text.trim()}`;
+        previous.linkedSentences = (previous.linkedSentences || 1) + 1;
+      } else groups.push(line);
+      return groups;
+    }, []);
+  }
+
+  function lineNeedsPlayer(line) {
+    return Boolean(line.waitForPlayer || (currentInterviewId && line.pin && !state.pinnedStatements.has(line.pin)));
+  }
+
+  function finishQueuedLine(line) {
+    if (!dialogueIsSequence || currentDialogueLine !== line) return;
+    if (lineNeedsPlayer(line)) {
+      el.next.hidden = false;
+      el.dialogueHint.textContent = "GHIM NẾU CẦN • TIẾP TỤC KHI SẴN SÀNG";
+      return;
+    }
+    el.next.hidden = true; el.dialogueHint.textContent = "TỰ PHÁT • BẤM ĐỂ TUA CÂU";
+    const following = queue[0];
+    const delay = following && following.who === line.who ? 90 : following ? 260 : 180;
+    clearDialogueAdvance();
+    dialogueAdvanceTimer = setTimeout(() => {
+      if (dialogueIsSequence && currentDialogueLine === line) nextLine();
+    }, delay);
+  }
+
+  function prefetchUpcomingDialogue() {
+    queue.slice(0, 2).forEach(prefetchCloudVoice);
+  }
+
+  function playDialogue(lines, done) {
+    clearDialogueAdvance(); queue = groupLinkedDialogue(lines); queueDone = done || null; dialogueIsSequence = true;
+    nextLine();
+  }
   function nextLine() {
+    clearDialogueAdvance();
     if (!queue.length) {
-      currentDialogueLine = null; hideInterrogationTools(); el.next.hidden = true;
+      currentDialogueLine = null; hideInterrogationTools(); el.next.hidden = true; dialogueIsSequence = false;
       const done = queueDone; queueDone = null; if (done) done(); return;
     }
-    const line = queue.shift(); currentDialogueLine = line; currentPinAttempted = false; setPortrait(line.who); typeLine(line.text, line.who); el.next.hidden = false; renderChoices([]); renderInterrogationTools(line);
+    const line = queue.shift(); currentDialogueLine = line; currentPinAttempted = false; setPortrait(line.who);
+    el.next.hidden = true; el.dialogueHint.textContent = "TỰ PHÁT • BẤM ĐỂ TUA CÂU"; renderChoices([]); renderInterrogationTools(line);
+    typeLine(line.text, line.who, () => finishQueuedLine(line)); prefetchUpcomingDialogue();
   }
-  function advanceDialogue() { if (!finishTyping()) nextLine(); }
+  function advanceDialogue() { if (!finishTyping()) { clearDialogueAdvance(); nextLine(); } }
 
   function hideInterrogationTools() {
     el.interrogationTools.hidden = true; el.pinStatement.disabled = false; el.dialoguePanel.classList.remove("interrogation-active");
@@ -641,6 +729,7 @@
     el.portrait.classList.add("pressured", "pressure-hit"); setTimeout(() => el.portrait.classList.remove("pressure-hit"), 420);
     renderInterrogationTools(currentDialogueLine); updateObjective(); save(); playTone(760, .09, "square", .018);
     toast(`Đã ghim: ${statements[pinId].quote}`);
+    if (dialogueIsSequence && !typing) finishQueuedLine(currentDialogueLine);
   }
 
   function toast(message) {
@@ -1138,9 +1227,10 @@
   function toggleSound() {
     state.sound = !state.sound; ensureAudio(); masterGain.gain.setTargetAtTime(state.sound ? .7 : 0, audioContext.currentTime, .04);
     if (!state.sound) {
+      const complete = currentLineComplete; currentLineComplete = null;
       cancelVoiceWait(); stopCloudVoice(); voiceSequence += 1;
       if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
-      if (typing) { clearInterval(typingTimer); el.dialogue.textContent = fullText; typing = false; }
+      if (typing) { clearInterval(typingTimer); el.dialogue.textContent = fullText; typing = false; if (complete) complete(); }
     }
     if (state.sound) replayCurrentVoice();
     el.replayVoice.disabled = !state.sound;
@@ -1172,7 +1262,10 @@
   el.replayVoice.addEventListener("click", (event) => { event.stopPropagation(); replayCurrentVoice(); });
   el.notebookButton.addEventListener("click", openNotebook); el.next.addEventListener("click", (event) => { event.stopPropagation(); advanceDialogue(); });
   el.pinStatement.addEventListener("click", (event) => { event.stopPropagation(); pinCurrentStatement(); });
-  el.dialoguePanel.addEventListener("click", (event) => { if (event.target.closest("button")) return; if (!el.next.hidden) advanceDialogue(); });
+  el.dialoguePanel.addEventListener("click", (event) => {
+    if (event.target.closest("button")) return;
+    if (typing || !el.next.hidden) advanceDialogue();
+  });
   el.locationNav.addEventListener("click", (event) => { const button = event.target.closest("[data-location]"); if (button) changeLocation(button.dataset.location); });
   el.inspectionClose.addEventListener("click", closeInspection); el.recordEvidence.addEventListener("click", recordPendingEvidence);
   el.linkClose.addEventListener("click", closeLinkBoard); el.testLink.addEventListener("click", testSelectedLink);
@@ -1183,7 +1276,7 @@
   el.submitReconstruction.addEventListener("click", submitReconstruction);
   $$(".notebook-tabs button").forEach((button) => button.addEventListener("click", () => renderNotebook(button.dataset.tab)));
   document.addEventListener("keydown", (event) => {
-    if (event.code === "Space" && !event.target.matches("button, input") && !el.next.hidden) { event.preventDefault(); advanceDialogue(); }
+    if (event.code === "Space" && !event.target.matches("button, input") && (typing || !el.next.hidden)) { event.preventDefault(); advanceDialogue(); }
     if (event.key.toLowerCase() === "n" && el.game.classList.contains("active")) openNotebook();
   });
 
