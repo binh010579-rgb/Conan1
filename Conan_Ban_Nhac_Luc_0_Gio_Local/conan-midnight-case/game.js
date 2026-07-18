@@ -273,6 +273,7 @@
   let queue = [], queueDone = null, typingTimer = 0, fullText = "", typing = false, toastTimer = 0;
   let pendingEvidence = null, selectedStatement = null, selectedEvidence = null, selectedFinalCard = null;
   let currentInterviewId = null, currentDialogueLine = null, currentPinAttempted = false, selectedTimelineEvent = null, currentVoiceLine = null;
+  let voiceSequence = 0, vietnameseVoices = [];
   let audioContext = null, masterGain = null, scoreTimer = 0, scoreStep = 0;
 
   function serialize() {
@@ -308,26 +309,85 @@
 
   function showGame() { el.title.classList.remove("active"); el.game.classList.add("active"); }
 
-  function speakLine(text, who = "narrator") {
-    currentVoiceLine = { text, who };
-    const supported = "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function";
-    el.replayVoice.hidden = !supported;
+  function supportsSpeechSynthesis() {
+    return "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function";
+  }
+
+  function refreshVietnameseVoices() {
+    vietnameseVoices = supportsSpeechSynthesis()
+      ? window.speechSynthesis.getVoices().filter((voice) => voice.lang?.toLowerCase().startsWith("vi"))
+      : [];
+    el.replayVoice.hidden = !vietnameseVoices.length;
     el.replayVoice.disabled = !state.sound;
-    if (!supported || !state.sound) return;
-    window.speechSynthesis.cancel();
+    return vietnameseVoices;
+  }
+
+  function vietnameseVoiceFor(who) {
+    refreshVietnameseVoices();
+    if (!vietnameseVoices.length) return null;
+    const voiceIndex = Math.abs([...who].reduce((sum, character) => sum + character.charCodeAt(0), 0)) % vietnameseVoices.length;
+    return vietnameseVoices[voiceIndex];
+  }
+
+  function spokenWordEnd(text, event = {}) {
+    const start = Number.isFinite(event.charIndex) ? Math.max(0, Math.min(text.length, event.charIndex)) : 0;
+    const statedLength = Number.isFinite(event.charLength) ? Math.max(0, event.charLength) : 0;
+    let end = Math.min(text.length, start + statedLength);
+    if (!statedLength) {
+      const remainder = text.slice(start);
+      const match = remainder.match(/^\s*\S+/);
+      end = Math.min(text.length, start + (match?.[0].length || 1));
+    }
+    while (end < text.length && /[,.!?;:\u2026\u201d\u2019"')\]]/.test(text[end])) end += 1;
+    return end;
+  }
+
+  function startTypewriter(text, token, startIndex = 0) {
+    clearInterval(typingTimer);
+    let index = Math.max(0, Math.min(text.length, startIndex));
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    typingTimer = setInterval(() => {
+      if (token !== voiceSequence || !typing) { clearInterval(typingTimer); return; }
+      index = Math.min(text.length, index + (reduced ? text.length : 2)); el.dialogue.textContent = text.slice(0, index);
+      if (index >= text.length) { clearInterval(typingTimer); typing = false; }
+    }, reduced ? 1 : 16);
+  }
+
+  function speakLine(text, who = "narrator", token = voiceSequence) {
+    currentVoiceLine = { text, who };
+    const voice = vietnameseVoiceFor(who);
+    if (!voice || !state.sound) return false;
+
     const utterance = new window.SpeechSynthesisUtterance(text);
     const style = voiceStyles[who] || voiceStyles.narrator;
-    utterance.lang = "vi-VN"; utterance.rate = style.rate; utterance.pitch = style.pitch; utterance.volume = .96;
-    const vietnameseVoices = window.speechSynthesis.getVoices().filter((voice) => voice.lang?.toLowerCase().startsWith("vi"));
-    if (vietnameseVoices.length) {
-      const voiceIndex = Math.abs([...who].reduce((sum, character) => sum + character.charCodeAt(0), 0)) % vietnameseVoices.length;
-      utterance.voice = vietnameseVoices[voiceIndex];
-    }
+    utterance.lang = "vi-VN"; utterance.voice = voice;
+    utterance.rate = style.rate; utterance.pitch = style.pitch; utterance.volume = .96;
+    utterance.onstart = () => {
+      if (token !== voiceSequence || !typing) return;
+      el.dialogue.textContent = text.slice(0, spokenWordEnd(text));
+    };
+    utterance.onboundary = (event) => {
+      if (token !== voiceSequence || !typing) return;
+      el.dialogue.textContent = text.slice(0, spokenWordEnd(text, event));
+    };
+    utterance.onend = () => {
+      if (token !== voiceSequence || !typing) return;
+      el.dialogue.textContent = text; typing = false;
+    };
+    utterance.onerror = () => {
+      if (token !== voiceSequence || !typing) return;
+      startTypewriter(text, token, el.dialogue.textContent.length);
+    };
     window.speechSynthesis.speak(utterance);
+    return true;
   }
 
   function replayCurrentVoice() {
-    if (currentVoiceLine) speakLine(currentVoiceLine.text, currentVoiceLine.who);
+    if (!currentVoiceLine) return;
+    clearInterval(typingTimer); const token = ++voiceSequence;
+    if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
+    fullText = currentVoiceLine.text; el.dialogue.textContent = ""; typing = true;
+    if (!speakLine(currentVoiceLine.text, currentVoiceLine.who, token)) startTypewriter(currentVoiceLine.text, token);
   }
 
   function applyTextSize(sizeId) {
@@ -369,17 +429,17 @@
   }
 
   function finishTyping() {
-    if (!typing) return false; clearInterval(typingTimer); el.dialogue.textContent = fullText; typing = false; return true;
+    if (!typing) return false;
+    clearInterval(typingTimer); voiceSequence += 1;
+    if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
+    el.dialogue.textContent = fullText; typing = false; return true;
   }
 
   function typeLine(text, who = "narrator") {
-    clearInterval(typingTimer); fullText = text; el.dialogue.textContent = ""; typing = true;
-    speakLine(text, who);
-    let index = 0; const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    typingTimer = setInterval(() => {
-      index = Math.min(text.length, index + (reduced ? text.length : 2)); el.dialogue.textContent = text.slice(0, index);
-      if (index >= text.length) { clearInterval(typingTimer); typing = false; }
-    }, reduced ? 1 : 16);
+    clearInterval(typingTimer); const token = ++voiceSequence;
+    if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
+    fullText = text; el.dialogue.textContent = ""; typing = true;
+    if (!speakLine(text, who, token)) startTypewriter(text, token);
   }
 
   function renderChoices(items = []) {
@@ -933,7 +993,10 @@
 
   function toggleSound() {
     state.sound = !state.sound; ensureAudio(); masterGain.gain.setTargetAtTime(state.sound ? .7 : 0, audioContext.currentTime, .04);
-    if (!state.sound && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    if (!state.sound && supportsSpeechSynthesis()) {
+      voiceSequence += 1; window.speechSynthesis.cancel();
+      if (typing) { clearInterval(typingTimer); el.dialogue.textContent = fullText; typing = false; }
+    }
     if (state.sound) replayCurrentVoice();
     el.replayVoice.disabled = !state.sound;
     el.sound.textContent = `ÂM: ${state.sound ? "BẬT" : "TẮT"}`; save();
@@ -980,5 +1043,11 @@
   });
 
   applyTextSize(localStorage.getItem(TEXT_SIZE_KEY) || "large");
+  if (supportsSpeechSynthesis()) {
+    refreshVietnameseVoices();
+    window.speechSynthesis.addEventListener?.("voiceschanged", refreshVietnameseVoices);
+  } else {
+    el.replayVoice.hidden = true;
+  }
   el.continueGame.hidden = !readSave(); updateObjective();
 })();
