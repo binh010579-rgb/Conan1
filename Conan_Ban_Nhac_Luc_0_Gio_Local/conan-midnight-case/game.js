@@ -1,9 +1,18 @@
 (() => {
   "use strict";
 
-  const SAVE_KEY = "conan-midnight-case-save-v3";
+  const SAVE_KEY = "conan-midnight-case-save-v4";
   const CORE_EVIDENCE = ["watch", "piano", "metronome", "door", "midi", "access", "amplifier", "toolcase"];
   const REQUIRED_LINKS = ["false-time", "machine-rhythm", "system-lie", "cloned-card", "misaki-slip"];
+  const MINI_GAME_EVIDENCE = ["watch", "piano", "metronome", "midi", "access"];
+  const TIMELINE_EVENTS = [
+    { id: "seal", time: "22:55", text: "Hộp dụng cụ của Yuto được niêm phong; thẻ S-04 gốc nằm bên trong." },
+    { id: "card", time: "23:12", text: "Một bản sao thẻ S-04 mở cửa Phòng thu A." },
+    { id: "death", time: "23:18", text: "Nhịp tim của Daigo dừng lại trong Phòng thu A." },
+    { id: "yuto", time: "23:25", text: "Haru thấy Yuto rời phòng điều khiển với hộp dụng cụ." },
+    { id: "midi", time: "23:50", text: "Tệp MIDI bắt đầu điều khiển cây đàn tự động." },
+  ];
+  const TIMELINE_DECK_ORDER = ["midi", "death", "seal", "yuto", "card"];
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -15,14 +24,18 @@
     scene: $("#scene"), sceneCaption: $("#scene-caption"), sceneTip: $("#scene-tip"), objectLayer: $("#object-layer"),
     locationNav: $("#location-nav"), portrait: $("#portrait"), speaker: $("#speaker-name"), speakerRole: $("#speaker-role"),
     dialogue: $("#dialogue-text"), choices: $("#choice-list"), next: $("#next-button"), dialoguePanel: $("#dialogue-panel"),
+    interrogationTools: $("#interrogation-tools"), tensionFill: $("#tension-fill"), pinStatement: $("#pin-statement"),
     notebook: $("#notebook"), notebookContent: $("#notebook-content"), inspection: $("#inspection"),
     inspectionTitle: $("#inspection-title"), inspectionVisual: $("#inspection-visual"), inspectionGlyph: $("#inspection-glyph"),
+    miniGameHost: $("#mini-game-host"),
     inspectionPrompt: $("#inspection-prompt"), inspectionActions: $("#inspection-actions"), inspectionNotes: $("#inspection-notes"),
     inspectionClose: $("#inspection-close"), recordEvidence: $("#record-evidence"), linkBoard: $("#link-board"),
     linkClose: $("#link-close"), statementDeck: $("#statement-deck"), evidenceDeck: $("#evidence-deck"),
     linkFeedback: $("#link-feedback"), testLink: $("#test-link"), audioLab: $("#audio-lab"), audioClose: $("#audio-close"),
     audioAlign: $("#audio-align"), audioOffset: $("#audio-offset"), audioResult: $("#audio-result"), lockAudio: $("#lock-audio"),
     sceneWave: $("#scene-wave"), reconstruction: $("#reconstruction"), finalSlots: $("#final-slots"),
+    timelineLab: $("#timeline-lab"), timelineClose: $("#timeline-close"), timelineSlots: $("#timeline-slots"),
+    timelineDeck: $("#timeline-deck"), timelineFeedback: $("#timeline-feedback"), checkTimeline: $("#check-timeline"),
     finalDeck: $("#final-deck"), reconstructionProgress: $("#reconstruction-progress"),
     reconstructionFeedback: $("#reconstruction-feedback"), submitReconstruction: $("#submit-reconstruction"), toast: $("#toast"),
   };
@@ -50,9 +63,10 @@
       lines: [
         { who: "rina", text: "Tôi căm ông Daigo vì đã xóa tên tôi khỏi bản nhạc, nhưng lúc 23:18 tôi đang ở sân khấu phụ trước hàng trăm khán giả." },
         { who: "conan", text: "Cô nghe thấy điều gì khác thường trong bản nhạc vang lên lúc 23:50?" },
-        { who: "rina", text: "Nó hoàn hảo đến vô hồn. Ông ấy luôn ngừng nửa nhịp trước hợp âm cuối; đêm nay khoảng nghỉ ấy biến mất." },
+        { who: "rina", text: "Nó hoàn hảo đến vô hồn. Ông ấy luôn ngừng nửa nhịp trước hợp âm cuối; đêm nay khoảng nghỉ ấy biến mất.", pin: "rina-rhythm" },
       ],
       records: ["rina-rhythm"],
+      requiredPins: ["rina-rhythm"],
     },
     misaki: {
       name: "Kisaragi Misaki", role: "Quản lý kiêm em gái nạn nhân", icon: "M",
@@ -60,9 +74,10 @@
       lines: [
         { who: "misaki", text: "Tôi mang cà phê vào lúc 23:08 rồi rời đi ngay. Anh tôi còn sống và đang tranh cãi về tiền bản quyền." },
         { who: "conan", text: "Khi ra hành lang, cô nhìn thấy ai?" },
-        { who: "misaki", text: "Yuto cầm thẻ S-04 đứng gần cửa. Tôi nghĩ anh ta đến sửa cây đàn tự động... chỉ vậy thôi." },
+        { who: "misaki", text: "Yuto cầm thẻ S-04 đứng gần cửa. Tôi nghĩ anh ta đến sửa cây đàn tự động... chỉ vậy thôi.", pin: "misaki-slip" },
       ],
       records: ["misaki-last", "misaki-slip"],
+      requiredPins: ["misaki-slip"],
     },
     haru: {
       name: "Nishino Haru", role: "Phóng viên âm nhạc", icon: "H",
@@ -70,19 +85,21 @@
       lines: [
         { who: "haru", text: "Tôi ra bãi xe gọi cho tòa soạn. Lúc trở lại khoảng 23:25, áo và ô đều ướt sũng." },
         { who: "conan", text: "Anh có gặp ai trên đường trở lại không?" },
-        { who: "haru", text: "Yuto bước khỏi phòng điều khiển, ôm một hộp dụng cụ kim loại. Trông anh ta rất hoảng." },
+        { who: "haru", text: "Yuto bước khỏi phòng điều khiển, ôm một hộp dụng cụ kim loại. Trông anh ta rất hoảng.", pin: "haru-control" },
       ],
       records: ["haru-control"],
+      requiredPins: ["haru-control"],
     },
     yuto: {
       name: "Senda Yuto", role: "Kỹ thuật viên âm thanh", icon: "Y",
       intro: "Hiểu hệ thống đàn tự động hơn bất kỳ ai. Em gái quá cố của anh từng sáng tác một bản nhạc cùng tên.",
       lines: [
-        { who: "yuto", text: "Tôi không vào Phòng thu A sau 22:40. Thẻ S-04 luôn ở trong hộp dụng cụ của tôi." },
+        { who: "yuto", text: "Tôi không vào Phòng thu A sau 22:40. Thẻ S-04 luôn ở trong hộp dụng cụ của tôi.", pin: "yuto-room" },
         { who: "conan", text: "Còn hệ thống âm thanh sau 23:30?" },
-        { who: "yuto", text: "Đã tắt hoàn toàn. Tôi không chạm vào bàn điều khiển và cũng không biết ai đã phát bản nhạc." },
+        { who: "yuto", text: "Đã tắt hoàn toàn. Tôi không chạm vào bàn điều khiển và cũng không biết ai đã phát bản nhạc.", pin: "yuto-system" },
       ],
       records: ["yuto-room", "yuto-system"],
+      requiredPins: ["yuto-room", "yuto-system"],
     },
   };
 
@@ -99,6 +116,7 @@
   const evidence = {
     watch: {
       name: "Đồng hồ thông minh", glyph: "⌚", location: "studio", area: [42, 59, 10, 12],
+      miniGame: "wipe",
       prompt: "Chiếc đồng hồ nằm sát chân micro. Màn hình vỡ nhưng bộ nhớ cục bộ chưa mất.",
       actions: [
         ["Đọc cảm biến", "Biểu đồ nhịp tim dừng đột ngột ở một mốc duy nhất: 23:18."],
@@ -109,6 +127,7 @@
     },
     piano: {
       name: "Đàn grand piano", glyph: "♬", location: "studio", area: [17, 25, 30, 38],
+      miniGame: "uv",
       prompt: "Cây đàn chiếm gần nửa căn phòng. Nếu vừa có người biểu diễn, cơ cấu và bàn đạp phải để lại dấu vết.",
       actions: [
         ["Kiểm tra phím", "Phím sạch đều, không có dấu dầu tay mới ở đoạn cao trào."],
@@ -118,6 +137,7 @@
     },
     metronome: {
       name: "Máy đếm nhịp", glyph: "△", location: "studio", area: [79, 67, 8, 21],
+      miniGame: "fit",
       prompt: "Máy đếm nhịp đặt trên bàn tiền cảnh. Thân gỗ còn mới nhưng trọng tâm bị lệch.",
       actions: [
         ["Xoay mặt sau", "Chốt giữ đã bị mở bằng tay, không phải hỏng do va đập."],
@@ -146,6 +166,7 @@
     },
     midi: {
       name: "Lệnh phát MIDI", glyph: "▶", location: "control", area: [43, 39, 39, 26], audio: true,
+      miniGame: "audio",
       prompt: "Màn hình trung tâm lưu một lệnh phát đã bị đổi tên. Chỉ phân tích âm thanh mới xác định được nó có điều khiển đàn hay không.",
       actions: [
         ["Đọc lịch tác vụ", "Tệp midnight_take.mid được hẹn chạy từ 23:50 đến đúng 0 giờ."],
@@ -156,6 +177,7 @@
     },
     access: {
       name: "Bộ nhớ đầu đọc thẻ", glyph: "#", location: "control", area: [3, 34, 9, 23],
+      miniGame: "logs",
       prompt: "Đầu đọc cửa còn giữ bản sao thô dù nhật ký trung tâm đã bị xóa một dòng.",
       actions: [
         ["Khôi phục bộ đệm", "Mã S-04 mở cửa lúc 23:12."],
@@ -231,18 +253,24 @@
 
   const state = {
     phase: "title", location: "hall", interviews: new Set(), statementCards: new Set(["crowd-time"]),
-    evidence: new Set(), inspections: {}, links: new Set(), audioSolved: false, mistakes: 0,
+    pinnedStatements: new Set(), suspectPressure: {}, evidence: new Set(), inspections: {}, miniGames: new Set(),
+    links: new Set(), audioSolved: false, timelineSlots: {}, timelineSolved: false, mistakes: 0,
     final: {}, sound: true, rank: null,
   };
 
   let queue = [], queueDone = null, typingTimer = 0, fullText = "", typing = false, toastTimer = 0;
   let pendingEvidence = null, selectedStatement = null, selectedEvidence = null, selectedFinalCard = null;
+  let currentInterviewId = null, currentDialogueLine = null, currentPinAttempted = false, selectedTimelineEvent = null;
   let audioContext = null, masterGain = null, scoreTimer = 0, scoreStep = 0;
 
   function serialize() {
     const inspectionData = {};
     Object.entries(state.inspections).forEach(([id, values]) => { inspectionData[id] = [...values]; });
-    return { ...state, interviews: [...state.interviews], statementCards: [...state.statementCards], evidence: [...state.evidence], inspections: inspectionData, links: [...state.links] };
+    return {
+      ...state,
+      interviews: [...state.interviews], statementCards: [...state.statementCards], pinnedStatements: [...state.pinnedStatements],
+      evidence: [...state.evidence], inspections: inspectionData, miniGames: [...state.miniGames], links: [...state.links],
+    };
   }
 
   function save() {
@@ -258,9 +286,11 @@
   function applySave(saved) {
     state.phase = saved.phase || "statements"; state.location = saved.location || "hall";
     state.interviews = new Set(saved.interviews || []); state.statementCards = new Set(saved.statementCards || ["crowd-time"]);
+    state.pinnedStatements = new Set(saved.pinnedStatements || []); state.suspectPressure = saved.suspectPressure || {};
     state.evidence = new Set(saved.evidence || []); state.inspections = {};
     Object.entries(saved.inspections || {}).forEach(([id, values]) => { state.inspections[id] = new Set(values); });
-    state.links = new Set(saved.links || []); state.audioSolved = Boolean(saved.audioSolved); state.mistakes = saved.mistakes || 0;
+    state.miniGames = new Set(saved.miniGames || []); state.links = new Set(saved.links || []); state.audioSolved = Boolean(saved.audioSolved);
+    state.timelineSlots = saved.timelineSlots || {}; state.timelineSolved = Boolean(saved.timelineSolved); state.mistakes = saved.mistakes || 0;
     state.final = saved.final || {}; state.sound = saved.sound !== false; state.rank = saved.rank || null;
   }
 
@@ -276,6 +306,7 @@
       prologue: "Đọc mở đầu vụ án", statements: `Lấy lời khai ${state.interviews.size}/4`,
       investigation: core === CORE_EVIDENCE.length ? "Đã đủ vật chứng • Đối chiếu" : `Khám phá vật chứng ${core}/${CORE_EVIDENCE.length}`,
       linking: `Khóa mối liên hệ ${state.links.size}/${REQUIRED_LINKS.length}`,
+      timeline: state.timelineSolved ? "Dòng thời gian đã khóa" : "Tự xếp 5 mốc thời gian",
       reconstruction: "Tự dựng lại toàn bộ vụ án", reveal: "Đối chất", ending: "Hồ sơ đã khép lại",
     };
     el.objective.textContent = labels[state.phase] || "Theo dấu sự thật";
@@ -285,6 +316,7 @@
   function setPortrait(who) {
     const id = characters[who] ? who : "narrator";
     el.portrait.className = `portrait ${id}`; el.portrait.hidden = id === "narrator";
+    if (currentInterviewId === id && (state.suspectPressure[id] || 0) > 0) el.portrait.classList.add("pressured");
     el.dialoguePanel.classList.toggle("narrator-dialogue", id === "narrator");
     [el.speaker.textContent, el.speakerRole.textContent] = characters[id];
   }
@@ -312,15 +344,52 @@
   }
 
   function setDialogue(who, text, { next = false, choices = [] } = {}) {
-    setPortrait(who); typeLine(text); el.next.hidden = !next; renderChoices(choices);
+    currentDialogueLine = null; currentPinAttempted = false; hideInterrogationTools(); setPortrait(who); typeLine(text); el.next.hidden = !next; renderChoices(choices);
   }
 
   function playDialogue(lines, done) { queue = [...lines]; queueDone = done || null; nextLine(); }
   function nextLine() {
-    if (!queue.length) { el.next.hidden = true; const done = queueDone; queueDone = null; if (done) done(); return; }
-    const line = queue.shift(); setDialogue(line.who, line.text, { next: true });
+    if (!queue.length) {
+      currentDialogueLine = null; hideInterrogationTools(); el.next.hidden = true;
+      const done = queueDone; queueDone = null; if (done) done(); return;
+    }
+    const line = queue.shift(); currentDialogueLine = line; currentPinAttempted = false; setPortrait(line.who); typeLine(line.text); el.next.hidden = false; renderChoices([]); renderInterrogationTools(line);
   }
   function advanceDialogue() { if (!finishTyping()) nextLine(); }
+
+  function hideInterrogationTools() {
+    el.interrogationTools.hidden = true; el.pinStatement.disabled = false; el.dialoguePanel.classList.remove("interrogation-active");
+  }
+
+  function renderInterrogationTools(line) {
+    const active = currentInterviewId && line?.who === currentInterviewId;
+    if (!active) { hideInterrogationTools(); return; }
+    const pinId = line.pin;
+    const person = suspects[currentInterviewId]; const pressure = state.suspectPressure[currentInterviewId] || 0;
+    el.interrogationTools.hidden = false; el.dialoguePanel.classList.add("interrogation-active");
+    el.tensionFill.style.width = `${Math.min(100, pressure)}%`;
+    el.pinStatement.disabled = currentPinAttempted || Boolean(pinId && state.pinnedStatements.has(pinId));
+    el.pinStatement.textContent = pinId && state.pinnedStatements.has(pinId) ? "ĐÃ GHIM" : currentPinAttempted ? "CHƯA ĐỦ CĂN CỨ" : "GHIM ĐỂ KIỂM CHỨNG";
+    el.pinStatement.setAttribute("aria-label", `Ghim lời khai của ${person.name}`);
+  }
+
+  function pinCurrentStatement() {
+    if (!currentInterviewId || !currentDialogueLine || currentPinAttempted) return; const pinId = currentDialogueLine.pin;
+    const person = suspects[currentInterviewId];
+    if (!pinId) {
+      currentPinAttempted = true; state.mistakes += 1;
+      state.suspectPressure[currentInterviewId] = Math.min(100, (state.suspectPressure[currentInterviewId] || 0) + 9);
+      el.portrait.classList.add("pressured", "pressure-hit"); setTimeout(() => el.portrait.classList.remove("pressure-hit"), 420);
+      renderInterrogationTools(currentDialogueLine); save(); playTone(132, .15, "sawtooth", .018);
+      toast("Câu này mới là bối cảnh hoặc động cơ, chưa có chi tiết độc lập để kiểm chứng."); return;
+    }
+    if (state.pinnedStatements.has(pinId)) return; const step = Math.ceil(100 / person.requiredPins.length);
+    state.pinnedStatements.add(pinId); state.statementCards.add(pinId);
+    state.suspectPressure[currentInterviewId] = Math.min(100, (state.suspectPressure[currentInterviewId] || 0) + step);
+    el.portrait.classList.add("pressured", "pressure-hit"); setTimeout(() => el.portrait.classList.remove("pressure-hit"), 420);
+    renderInterrogationTools(currentDialogueLine); updateObjective(); save(); playTone(760, .09, "square", .018);
+    toast(`Đã ghim: ${statements[pinId].quote}`);
+  }
 
   function toast(message) {
     clearTimeout(toastTimer); el.toast.textContent = message; el.toast.classList.add("visible");
@@ -353,19 +422,36 @@
   }
 
   function renderStatementMenu() {
+    currentInterviewId = null; currentDialogueLine = null; hideInterrogationTools();
     const complete = Object.keys(suspects).every((id) => state.interviews.has(id));
-    const choices = Object.entries(suspects).map(([id, person]) => ({ label: `${state.interviews.has(id) ? "✓ " : ""}${person.name}`, action: () => interview(id) }));
+    const choices = Object.entries(suspects).map(([id, person]) => {
+      const pins = person.requiredPins.filter((pin) => state.pinnedStatements.has(pin)).length;
+      const status = state.interviews.has(id) ? "✓ " : pins ? `${pins}/${person.requiredPins.length} • ` : "";
+      return { label: `${status}${person.name}`, action: () => interview(id) };
+    });
     if (complete) choices.unshift({ label: "Đến hiện trường", action: beginInvestigation });
     setDialogue("conan", complete
       ? "Đã ghi đủ lời khai. Bây giờ hãy tìm đồ vật thật trong ba khu vực và kiểm tra xem câu nào chịu được vật chứng."
-      : "Trước tiên chỉ lấy lời khai, chưa tranh luận và chưa đưa vật chứng. Mỗi lời nói sẽ được lưu nguyên văn trong Sổ vụ án.", { choices });
+      : "Nghe từng người và bấm GHIM ngay khi họ nói một câu có thể kiểm chứng. Bỏ lỡ câu quan trọng thì phải nghe lại — Sổ vụ án không tự suy luận hộ bạn.", { choices });
   }
 
   function interview(id) {
-    const person = suspects[id];
+    const person = suspects[id]; currentInterviewId = id;
     playDialogue(person.lines, () => {
+      const missing = person.requiredPins.filter((pin) => !state.pinnedStatements.has(pin));
+      if (missing.length) {
+        currentInterviewId = null; hideInterrogationTools();
+        setDialogue("conan", `Bạn đã bỏ lỡ ${missing.length} câu có thể kiểm chứng trong lời khai của ${person.name}. Nghe lại và ghim đúng lúc — game sẽ không tự chọn hộ.`, {
+          choices: [
+            { label: "Nghe lại lời khai", action: () => interview(id) },
+            { label: "Hỏi người khác trước", action: renderStatementMenu },
+          ],
+        });
+        return;
+      }
       const first = !state.interviews.has(id); state.interviews.add(id); person.records.forEach((record) => state.statementCards.add(record));
-      updateObjective(); save(); if (first) toast(`Đã lưu lời khai của ${person.name}`); renderStatementMenu();
+      currentInterviewId = null; hideInterrogationTools(); updateObjective(); save();
+      if (first) toast(`Đã khóa lời khai của ${person.name}`); renderStatementMenu();
     });
   }
 
@@ -378,10 +464,11 @@
     const core = CORE_EVIDENCE.filter((id) => state.evidence.has(id)).length;
     const choices = [{ label: "Mở sổ vụ án", action: openNotebook }];
     if (core >= 4) choices.push({ label: "Mở bảng đối chiếu", action: openLinkBoard });
-    if (core === CORE_EVIDENCE.length && REQUIRED_LINKS.every((id) => state.links.has(id))) choices.unshift({ label: "Dựng lại vụ án", action: openReconstruction });
+    if (core === CORE_EVIDENCE.length) choices.unshift({ label: `${state.timelineSolved ? "✓ " : ""}Dựng dòng thời gian`, action: openTimelineLab });
+    if (core === CORE_EVIDENCE.length && state.timelineSolved && REQUIRED_LINKS.every((id) => state.links.has(id))) choices.unshift({ label: "Dựng lại vụ án", action: openReconstruction });
     setDialogue("conan", core === CORE_EVIDENCE.length
-      ? "Không còn vật chứng cốt lõi nào bị bỏ sót. Hãy ghép lời khai với vật chứng; một lời nói dối chưa chắc đồng nghĩa với giết người."
-      : `Quan sát đồ vật trong ảnh; không còn dấu “+”. Vật khả nghi chỉ phản sáng nhẹ khi rê chuột hoặc chạm. Đã ghi ${core}/${CORE_EVIDENCE.length} vật chứng cốt lõi.`, { choices });
+      ? "Không còn vật chứng cốt lõi nào bị bỏ sót. Tự xếp lại dòng thời gian rồi ghép lời khai với vật chứng; một lời nói dối chưa chắc đồng nghĩa với giết người."
+      : `Quan sát cảnh thật rồi thao tác trực tiếp trên từng vật thể. Đã hoàn tất ${state.miniGames.size}/${MINI_GAME_EVIDENCE.length} thử nghiệm và ghi ${core}/${CORE_EVIDENCE.length} vật chứng cốt lõi.`, { choices });
   }
 
   function openInspection(id) {
@@ -394,25 +481,155 @@
 
   function renderInspection() {
     const item = evidence[pendingEvidence]; const inspected = state.inspections[pendingEvidence]; if (!item || !inspected) return;
-    el.inspectionActions.replaceChildren(); el.inspectionNotes.replaceChildren();
-    item.actions.forEach(([label], index) => {
-      const button = document.createElement("button"); button.type = "button"; button.textContent = `${inspected.has(index) ? "✓ " : ""}${label}`;
-      button.classList.toggle("done", inspected.has(index)); button.addEventListener("click", () => inspectDetail(index)); el.inspectionActions.append(button);
-      if (inspected.has(index)) { const note = document.createElement("p"); note.textContent = item.actions[index][1]; el.inspectionNotes.append(note); }
-    });
+    el.inspectionActions.replaceChildren(); el.inspectionNotes.replaceChildren(); el.miniGameHost.replaceChildren();
+    const hasMiniGame = Boolean(item.miniGame); const miniGameSolved = state.miniGames.has(pendingEvidence);
+    el.inspectionVisual.classList.toggle("mini-game-active", hasMiniGame && !miniGameSolved);
+    el.inspectionGlyph.hidden = hasMiniGame && !miniGameSolved; el.miniGameHost.hidden = !hasMiniGame || miniGameSolved;
+    if (hasMiniGame && !miniGameSolved) renderMiniGame(pendingEvidence);
+    if (!hasMiniGame) {
+      item.actions.forEach(([label], index) => {
+        const button = document.createElement("button"); button.type = "button"; button.textContent = `${inspected.has(index) ? "✓ " : ""}${label}`;
+        button.classList.toggle("done", inspected.has(index)); button.addEventListener("click", () => inspectDetail(index)); el.inspectionActions.append(button);
+      });
+    }
     if (item.audio && !state.audioSolved) {
-      const button = document.createElement("button"); button.type = "button"; button.className = "audio-action"; button.textContent = "♫ So sánh hai bản ghi";
+      const button = document.createElement("button"); button.type = "button"; button.className = "audio-action"; button.textContent = "♫ Mở bàn pháp y âm thanh";
       button.addEventListener("click", openAudioLab); el.inspectionActions.append(button);
     }
-    const complete = inspected.size === item.actions.length && (!item.audio || state.audioSolved);
+    item.actions.forEach(([, note], index) => {
+      if (inspected.has(index) || miniGameSolved) { const paragraph = document.createElement("p"); paragraph.textContent = note; el.inspectionNotes.append(paragraph); }
+    });
+    const complete = hasMiniGame ? miniGameSolved : inspected.size === item.actions.length;
     el.recordEvidence.disabled = !complete || state.evidence.has(pendingEvidence);
-    el.recordEvidence.textContent = state.evidence.has(pendingEvidence) ? "Đã ghi trong sổ" : complete ? "Ghi vật chứng vào sổ" : "Kiểm tra đủ các chi tiết";
+    el.recordEvidence.textContent = state.evidence.has(pendingEvidence) ? "Đã ghi trong sổ" : complete ? "Ghi vật chứng vào sổ" : hasMiniGame ? "Hoàn tất thử nghiệm trước" : "Kiểm tra đủ các chi tiết";
   }
 
   function inspectDetail(index) {
     const item = evidence[pendingEvidence]; const inspected = state.inspections[pendingEvidence]; if (!item || !inspected) return;
     inspected.add(index); el.inspectionVisual.classList.remove("turn"); void el.inspectionVisual.offsetWidth; el.inspectionVisual.classList.add("turn");
     playTone(520 + index * 90, .08, "sine", .018); renderInspection(); save();
+  }
+
+  function renderMiniGame(id) {
+    if (id === "watch") renderWatchGame();
+    else if (id === "piano") renderUvGame();
+    else if (id === "metronome") renderFitGame();
+    else if (id === "access") renderLogGame();
+    else if (id === "midi") {
+      el.miniGameHost.innerHTML = `<div class="audio-mini"><span>PHỔ ÂM BỊ LỆCH</span><div class="mini-wave"><i></i><i></i><i></i><i></i><i></i></div><p>Hai bản thu nghe gần giống nhau. Hãy mở bàn pháp y để tự khóa điểm đồng bộ.</p></div>`;
+    }
+  }
+
+  function renderWatchGame() {
+    el.miniGameHost.innerHTML = `
+      <div class="wipe-game">
+        <p>Giữ chuột hoặc ngón tay rồi lau lớp bụi trên mặt kính.</p>
+        <div class="watch-face" data-wipe-surface tabindex="0" role="button" aria-label="Lau mặt đồng hồ">
+          <span>23:18</span><small>HEART RATE LOST</small><i class="grime-layer"></i>
+        </div>
+        <div class="mini-progress"><b></b></div><output>Đã làm sạch 0%</output>
+      </div>`;
+    const surface = $("[data-wipe-surface]", el.miniGameHost); const grime = $(".grime-layer", surface);
+    const bar = $(".mini-progress b", el.miniGameHost); const output = $("output", el.miniGameHost);
+    let wiping = false, progress = 0, lastX = 0, lastY = 0;
+    const wipe = (amount) => {
+      progress = Math.min(100, progress + amount); grime.style.opacity = String(Math.max(.05, 1 - progress / 105));
+      bar.style.width = `${progress}%`; output.textContent = `Đã làm sạch ${progress}%`;
+      if (progress >= 100) solveMiniGame("watch");
+    };
+    surface.addEventListener("pointerdown", (event) => { wiping = true; lastX = event.clientX || 0; lastY = event.clientY || 0; surface.classList.add("wiping"); wipe(8); });
+    surface.addEventListener("pointermove", (event) => {
+      if (!wiping) return; const distance = Math.hypot((event.clientX || 0) - lastX, (event.clientY || 0) - lastY);
+      lastX = event.clientX || 0; lastY = event.clientY || 0; wipe(Math.max(5, Math.min(16, Math.round(distance / 3))));
+    });
+    const stop = () => { wiping = false; surface.classList.remove("wiping"); };
+    surface.addEventListener("pointerup", stop); surface.addEventListener("pointerleave", stop);
+    surface.addEventListener("keydown", (event) => { if (["Enter", " "].includes(event.key)) { event.preventDefault(); wipe(20); } });
+  }
+
+  function renderUvGame() {
+    el.miniGameHost.innerHTML = `
+      <div class="uv-game" data-uv-stage>
+        <p>Rê đèn UV qua ba vùng của cây đàn rồi chạm vào dấu vết phát sáng.</p>
+        <div class="piano-silhouette" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <button type="button" data-uv-target="keys" style="--x:56%;--y:39%" aria-label="Soi dãy phím">DÃY PHÍM</button>
+        <button type="button" data-uv-target="pedals" style="--x:50%;--y:78%" aria-label="Soi bàn đạp">BÀN ĐẠP</button>
+        <button type="button" data-uv-target="rail" style="--x:25%;--y:56%" aria-label="Soi mép đàn">MÉP ĐÀN</button>
+        <span class="uv-beam" aria-hidden="true"></span><output>0 / 3 dấu vết</output>
+      </div>`;
+    const stage = $("[data-uv-stage]", el.miniGameHost); const beam = $(".uv-beam", stage); const output = $("output", stage); const found = new Set();
+    stage.addEventListener("pointermove", (event) => {
+      const box = stage.getBoundingClientRect(); const x = box.width ? event.clientX - box.left : event.clientX; const y = box.height ? event.clientY - box.top : event.clientY;
+      beam.style.transform = `translate(${x}px,${y}px)`;
+    });
+    $$('[data-uv-target]', stage).forEach((button) => button.addEventListener("click", () => {
+      if (found.has(button.dataset.uvTarget)) return; found.add(button.dataset.uvTarget); button.classList.add("found");
+      output.textContent = `${found.size} / 3 dấu vết`; playTone(510 + found.size * 110, .12, "sine", .018);
+      if (found.size === 3) solveMiniGame("piano");
+    }));
+  }
+
+  function renderFitGame() {
+    el.miniGameHost.innerHTML = `
+      <div class="fit-game">
+        <p>Chọn mảnh phù hợp rồi đặt vào hốc mất cân bằng của máy đếm nhịp.</p>
+        <div class="metronome-body"><span data-fit-slot tabindex="0" role="button" aria-label="Hốc lắp quả nặng">HỐC TRỐNG</span></div>
+        <div class="weight-pieces">
+          <button type="button" draggable="true" data-piece="wood">MẢNH GỖ</button>
+          <button type="button" draggable="true" data-piece="brass">QUẢ ĐỒNG</button>
+          <button type="button" draggable="true" data-piece="steel">ỐC THÉP</button>
+        </div><output>So hình dạng, khối lượng và vết lõm.</output>
+      </div>`;
+    const slot = $("[data-fit-slot]", el.miniGameHost); const output = $("output", el.miniGameHost); let selected = null;
+    const choose = (piece, button) => { selected = piece; $$("[data-piece]", el.miniGameHost).forEach((item) => item.classList.toggle("selected", item === button)); };
+    const fit = (piece) => {
+      if (!piece) { output.textContent = "Hãy chọn một mảnh trước."; return; }
+      if (piece === "brass") { slot.textContent = "KHỚP VẾT LÕM"; slot.classList.add("correct"); solveMiniGame("metronome"); return; }
+      state.mistakes += 1; output.textContent = piece === "wood" ? "Quá nhẹ và không tạo được vết lõm." : "Ốc thép quá nhỏ so với hốc trượt.";
+      slot.classList.remove("wrong"); void slot.offsetWidth; slot.classList.add("wrong"); playTone(126, .16, "sawtooth", .018); save();
+    };
+    $$("[data-piece]", el.miniGameHost).forEach((button) => {
+      button.addEventListener("click", () => choose(button.dataset.piece, button));
+      button.addEventListener("dragstart", (event) => { selected = button.dataset.piece; if (event.dataTransfer) event.dataTransfer.setData("text/plain", selected); });
+    });
+    slot.addEventListener("click", () => fit(selected)); slot.addEventListener("keydown", (event) => { if (["Enter", " "].includes(event.key)) fit(selected); });
+    slot.addEventListener("dragover", (event) => event.preventDefault()); slot.addEventListener("drop", (event) => { event.preventDefault(); fit(event.dataTransfer?.getData("text/plain") || selected); });
+  }
+
+  function renderLogGame() {
+    const fragments = [
+      ["delete", "00:04 / CENTRAL DELETE"], ["crc", "CRC ≠ ORIGINAL"], ["head", "23:12 / READER HEAD"], ["code", "S-04 / COPY FLAG"],
+    ];
+    el.miniGameHost.innerHTML = `
+      <div class="log-game">
+        <p>Chạm các mảnh log theo thứ tự một gói dữ liệu được đầu đọc ghi lại.</p>
+        <div class="log-sequence" aria-live="polite"></div>
+        <div class="log-fragments">${fragments.map(([id, label]) => `<button type="button" data-log-id="${id}">${label}</button>`).join("")}</div>
+        <div class="log-controls"><button type="button" data-log-reset>LÀM LẠI</button><button type="button" data-log-check disabled>GIẢI MÃ</button></div>
+        <output>0 / 4 mảnh đã nối</output>
+      </div>`;
+    const sequence = $(".log-sequence", el.miniGameHost); const output = $("output", el.miniGameHost); const check = $("[data-log-check]", el.miniGameHost); let chosen = [];
+    const renderSequence = () => {
+      sequence.innerHTML = chosen.length ? chosen.map((id, index) => `<button type="button" data-log-remove="${id}"><small>${index + 1}</small>${fragments.find(([key]) => key === id)[1]}</button>`).join("") : "<span>ĐẶT MẢNH LOG VÀO ĐÂY</span>";
+      $$("[data-log-id]", el.miniGameHost).forEach((button) => { button.disabled = chosen.includes(button.dataset.logId); });
+      $$("[data-log-remove]", sequence).forEach((button) => button.addEventListener("click", () => { chosen = chosen.filter((id) => id !== button.dataset.logRemove); renderSequence(); }));
+      output.textContent = `${chosen.length} / 4 mảnh đã nối`; check.disabled = chosen.length !== 4;
+    };
+    $$("[data-log-id]", el.miniGameHost).forEach((button) => button.addEventListener("click", () => { chosen.push(button.dataset.logId); renderSequence(); }));
+    $("[data-log-reset]", el.miniGameHost).addEventListener("click", () => { chosen = []; renderSequence(); });
+    check.addEventListener("click", () => {
+      if (chosen.join(",") === "head,code,crc,delete") { solveMiniGame("access"); return; }
+      state.mistakes += 1; output.textContent = "Gói dữ liệu chưa đúng chiều ghi. Thử đọc từ đầu đọc đến thao tác xóa.";
+      sequence.classList.remove("wrong"); void sequence.offsetWidth; sequence.classList.add("wrong"); playTone(118, .18, "sawtooth", .018); save();
+    });
+    renderSequence();
+  }
+
+  function solveMiniGame(id) {
+    if (state.miniGames.has(id)) return; const item = evidence[id];
+    state.miniGames.add(id); if (!state.inspections[id]) state.inspections[id] = new Set();
+    item.actions.forEach((_, index) => state.inspections[id].add(index)); el.inspectionTitle.textContent = item.name;
+    playChord([48, 55, 60, 64], .75, .012); toast(`Thử nghiệm hoàn tất: ${item.name}`); save(); renderInspection(); updateObjective();
   }
 
   function recordPendingEvidence() {
@@ -442,7 +659,9 @@
   function lockAudio() {
     const value = Number(el.audioAlign.value);
     if (Math.abs(value - 58) > 3) { state.mistakes += 1; el.audioResult.textContent = "Điểm đầu và cuối câu vẫn trượt nhau. Hãy nghe lại rồi dịch bản ghi."; playTone(125, .18, "sawtooth", .02); save(); return; }
-    state.audioSolved = true; el.audioResult.textContent = "Đã khóa: bản hiện trường bám lưới tuyệt đối, không có độ trễ tự nhiên của người chơi.";
+    state.audioSolved = true; state.miniGames.add("midi"); if (!state.inspections.midi) state.inspections.midi = new Set();
+    evidence.midi.actions.forEach((_, index) => state.inspections.midi.add(index));
+    el.audioResult.textContent = "Đã khóa: bản hiện trường bám lưới tuyệt đối, không có độ trễ tự nhiên của người chơi.";
     playChord([48, 55, 60, 64], .9, .014); save(); setTimeout(() => { if (el.audioLab.open) el.audioLab.close(); if (pendingEvidence) { if (!el.inspection.open) el.inspection.showModal(); renderInspection(); } }, 850);
   }
 
@@ -485,9 +704,65 @@
     setPhase("investigation", "Khám phá hiện trường"); renderObjects(); renderInvestigationPrompt();
   }
 
+  function openTimelineLab() {
+    if (!CORE_EVIDENCE.every((id) => state.evidence.has(id))) { toast("Hãy thu đủ vật chứng cốt lõi trước khi xếp dòng thời gian."); return; }
+    if (el.notebook.open) el.notebook.close(); if (el.linkBoard.open) el.linkBoard.close();
+    selectedTimelineEvent = null; setPhase("timeline", "Tái dựng thời gian"); renderTimelineLab();
+    if (!el.timelineLab.open) el.timelineLab.showModal(); playChord([41, 48, 53, 57], .7, .009);
+  }
+
+  function renderTimelineLab() {
+    el.timelineSlots.replaceChildren();
+    TIMELINE_EVENTS.forEach((slot) => {
+      const eventId = state.timelineSlots[slot.id]; const event = TIMELINE_EVENTS.find((item) => item.id === eventId);
+      const button = document.createElement("button"); button.type = "button"; button.className = `timeline-slot${event ? " filled" : ""}`;
+      button.dataset.timelineSlot = slot.id; button.innerHTML = `<time>${slot.time}</time><span>${event ? event.text : "Thả một sự kiện vào mốc này"}</span>`;
+      button.addEventListener("click", () => {
+        if (selectedTimelineEvent) placeTimelineEvent(slot.id, selectedTimelineEvent);
+        else if (eventId) { delete state.timelineSlots[slot.id]; renderTimelineLab(); save(); }
+      });
+      button.addEventListener("dragover", (eventDrag) => eventDrag.preventDefault());
+      button.addEventListener("drop", (eventDrop) => { eventDrop.preventDefault(); const id = eventDrop.dataTransfer?.getData("text/plain"); if (id) placeTimelineEvent(slot.id, id); });
+      el.timelineSlots.append(button);
+    });
+    const used = new Set(Object.values(state.timelineSlots)); el.timelineDeck.replaceChildren();
+    TIMELINE_DECK_ORDER.forEach((id) => {
+      if (used.has(id)) return; const event = TIMELINE_EVENTS.find((item) => item.id === id); const button = document.createElement("button");
+      button.type = "button"; button.draggable = true; button.dataset.timelineEvent = id; button.className = `timeline-event${selectedTimelineEvent === id ? " selected" : ""}`;
+      button.innerHTML = `<small>SỰ KIỆN</small><span>${event.text}</span>`;
+      button.addEventListener("click", () => { selectedTimelineEvent = selectedTimelineEvent === id ? null : id; renderTimelineLab(); });
+      button.addEventListener("dragstart", (dragEvent) => { selectedTimelineEvent = id; if (dragEvent.dataTransfer) dragEvent.dataTransfer.setData("text/plain", id); });
+      el.timelineDeck.append(button);
+    });
+    const filled = Object.keys(state.timelineSlots).length; el.checkTimeline.disabled = filled !== TIMELINE_EVENTS.length;
+    el.timelineFeedback.textContent = state.timelineSolved ? "Dòng thời gian đã được chứng minh bằng hồ sơ." : `Đã đặt ${filled}/${TIMELINE_EVENTS.length} sự kiện. Game chỉ báo cả chuỗi đúng hoặc sai.`;
+  }
+
+  function placeTimelineEvent(slotId, eventId) {
+    if (!TIMELINE_EVENTS.some((item) => item.id === slotId) || !TIMELINE_EVENTS.some((item) => item.id === eventId)) return;
+    Object.keys(state.timelineSlots).forEach((key) => { if (state.timelineSlots[key] === eventId) delete state.timelineSlots[key]; });
+    state.timelineSlots[slotId] = eventId; selectedTimelineEvent = null; playTone(440 + Object.keys(state.timelineSlots).length * 45, .07, "triangle", .014); renderTimelineLab(); save();
+  }
+
+  function checkTimeline() {
+    const correct = TIMELINE_EVENTS.every((slot) => state.timelineSlots[slot.id] === slot.id);
+    if (!correct) {
+      state.mistakes += 1; el.timelineFeedback.textContent = "Ít nhất một sự kiện đang đứng sai mốc. Đối chiếu mốc khách quan; game không chỉ ra ô sai.";
+      el.timelineLab.classList.remove("wrong"); void el.timelineLab.offsetWidth; el.timelineLab.classList.add("wrong"); playTone(112, .24, "sawtooth", .022); save(); return;
+    }
+    state.timelineSolved = true; el.timelineFeedback.textContent = "Chuỗi thời gian đã khóa: tiếng đàn 23:50 xảy ra sau khi nạn nhân chết.";
+    playChord([45, 52, 57, 60, 64], 1, .014); updateObjective(); save();
+    setTimeout(() => closeTimelineLab(), 900);
+  }
+
+  function closeTimelineLab() {
+    if (el.timelineLab.open) el.timelineLab.close(); selectedTimelineEvent = null;
+    setPhase("investigation", "Khám phá hiện trường"); renderObjects(); renderInvestigationPrompt();
+  }
+
   function openReconstruction() {
-    if (!CORE_EVIDENCE.every((id) => state.evidence.has(id)) || !REQUIRED_LINKS.every((id) => state.links.has(id))) {
-      toast("Bạn chưa đủ vật chứng hoặc mối liên hệ để dựng toàn bộ vụ án."); return;
+    if (!CORE_EVIDENCE.every((id) => state.evidence.has(id)) || !REQUIRED_LINKS.every((id) => state.links.has(id)) || !state.timelineSolved) {
+      toast("Bạn cần đủ vật chứng, dòng thời gian và năm mối liên hệ trước khi đối chất."); return;
     }
     if (el.linkBoard.open) el.linkBoard.close(); setPhase("reconstruction", "Dựng lại vụ án"); selectedFinalCard = null; renderReconstruction();
     if (!el.reconstruction.open) el.reconstruction.showModal(); playChord([38, 50, 57, 62], 1.1, .012);
@@ -522,7 +797,10 @@
   function submitReconstruction() {
     const correct = finalSlots.every((slot) => state.final[slot.id] === slot.correct);
     if (!correct) {
-      state.mistakes += 1; el.reconstructionFeedback.textContent = "Ít nhất một mắt xích chưa được chứng minh bởi hồ sơ. Không chỉ ra ô sai — hãy tự đối chiếu lại.";
+      state.mistakes += 1; const accused = state.final.culprit?.startsWith("suspect-") ? suspects[state.final.culprit.slice(8)] : null;
+      el.reconstructionFeedback.textContent = accused
+        ? `${accused.name}: “Nếu buộc tội tôi, hãy chỉ ra cả thời điểm, thủ thuật và hung khí.” Ít nhất một mắt xích chưa đứng vững.`
+        : "Ít nhất một mắt xích chưa được chứng minh bởi hồ sơ. Không chỉ ra ô sai — hãy tự đối chiếu lại.";
       el.reconstruction.classList.remove("wrong"); void el.reconstruction.offsetWidth; el.reconstruction.classList.add("wrong"); playTone(110, .28, "sawtooth", .025); save(); return;
     }
     el.reconstructionFeedback.textContent = "Mọi mắt xích đã khép kín. Bắt đầu đối chất."; playChord([45, 52, 57, 60, 64], 1.2, .016);
@@ -578,7 +856,10 @@
       events.sort((a, b) => a[0].localeCompare(b[0])); const list = document.createElement("div"); list.className = "timeline-list";
       if (!events.length) list.innerHTML = `<p class="empty-note">Dòng thời gian chỉ hiện khi bạn tìm được mốc khách quan.</p>`;
       events.forEach(([time, text]) => { const item = document.createElement("article"); item.innerHTML = `<time>${time}</time><p>${text}</p>`; list.append(item); });
-      el.notebookContent.append(list);
+      const launch = document.createElement("button"); launch.type = "button"; launch.className = "button primary timeline-launch";
+      launch.textContent = state.timelineSolved ? "✓ Xem lại bàn thời gian" : "Tự xếp dòng thời gian";
+      launch.disabled = !CORE_EVIDENCE.every((id) => state.evidence.has(id)); launch.addEventListener("click", openTimelineLab);
+      el.notebookContent.append(list, launch);
     }
   }
 
@@ -608,14 +889,19 @@
 
   function beginNewGame() {
     localStorage.removeItem(SAVE_KEY); showGame(); ensureAudio(); startScore();
-    Object.assign(state, { phase: "prologue", location: "hall", interviews: new Set(), statementCards: new Set(["crowd-time"]), evidence: new Set(), inspections: {}, links: new Set(), audioSolved: false, mistakes: 0, final: {}, rank: null });
+    Object.assign(state, {
+      phase: "prologue", location: "hall", interviews: new Set(), statementCards: new Set(["crowd-time"]),
+      pinnedStatements: new Set(), suspectPressure: {}, evidence: new Set(), inspections: {}, miniGames: new Set(), links: new Set(),
+      audioSolved: false, timelineSlots: {}, timelineSolved: false, mistakes: 0, final: {}, rank: null,
+    });
+    currentInterviewId = null; currentDialogueLine = null; currentPinAttempted = false; selectedTimelineEvent = null; hideInterrogationTools();
     setPhase("prologue", "Mở đầu"); changeLocation("hall"); playDialogue(prologue, startStatements);
   }
 
   function continueSaved() {
     const saved = readSave(); if (!saved) return beginNewGame(); applySave(saved); showGame(); ensureAudio(); startScore(); el.sound.textContent = `ÂM: ${state.sound ? "BẬT" : "TẮT"}`;
     if (state.phase === "statements" || state.phase === "prologue") startStatements();
-    else if (["investigation", "linking"].includes(state.phase)) { state.phase = "investigation"; setPhase("investigation", "Khám phá hiện trường"); el.locationNav.hidden = false; el.sceneTip.hidden = false; changeLocation(state.location || "studio"); renderInvestigationPrompt(); }
+    else if (["investigation", "linking", "timeline"].includes(state.phase)) { state.phase = "investigation"; setPhase("investigation", "Khám phá hiện trường"); el.locationNav.hidden = false; el.sceneTip.hidden = false; changeLocation(state.location || "studio"); renderInvestigationPrompt(); }
     else if (state.phase === "reconstruction") { state.phase = "investigation"; setPhase("investigation", "Khám phá hiện trường"); changeLocation(state.location || "studio"); openReconstruction(); }
     else if (state.phase === "ending") { changeLocation("studio"); finishCase(); }
     else { state.phase = "investigation"; beginInvestigation(); }
@@ -623,12 +909,14 @@
 
   el.newGame.addEventListener("click", beginNewGame); el.continueGame.addEventListener("click", continueSaved); el.sound.addEventListener("click", toggleSound);
   el.notebookButton.addEventListener("click", openNotebook); el.next.addEventListener("click", (event) => { event.stopPropagation(); advanceDialogue(); });
+  el.pinStatement.addEventListener("click", (event) => { event.stopPropagation(); pinCurrentStatement(); });
   el.dialoguePanel.addEventListener("click", (event) => { if (event.target.closest("button")) return; if (!el.next.hidden) advanceDialogue(); });
   el.locationNav.addEventListener("click", (event) => { const button = event.target.closest("[data-location]"); if (button) changeLocation(button.dataset.location); });
   el.inspectionClose.addEventListener("click", closeInspection); el.recordEvidence.addEventListener("click", recordPendingEvidence);
   el.linkClose.addEventListener("click", closeLinkBoard); el.testLink.addEventListener("click", testSelectedLink);
   el.audioClose.addEventListener("click", () => { if (el.audioLab.open) el.audioLab.close(); if (pendingEvidence && !el.inspection.open) { el.inspection.showModal(); renderInspection(); } });
   el.audioAlign.addEventListener("input", updateAudioReadout); el.lockAudio.addEventListener("click", lockAudio);
+  el.timelineClose.addEventListener("click", closeTimelineLab); el.checkTimeline.addEventListener("click", checkTimeline);
   $$('[data-play-sample]').forEach((button) => button.addEventListener("click", () => playSample(button.dataset.playSample)));
   el.submitReconstruction.addEventListener("click", submitReconstruction);
   $$(".notebook-tabs button").forEach((button) => button.addEventListener("click", () => renderNotebook(button.dataset.tab)));
