@@ -2,6 +2,12 @@
   "use strict";
 
   const SAVE_KEY = "conan-midnight-case-save-v4";
+  const TEXT_SIZE_KEY = "conan-midnight-case-text-size";
+  const TEXT_SIZES = [
+    { id: "medium", label: "VỪA" },
+    { id: "large", label: "LỚN" },
+    { id: "xlarge", label: "RẤT LỚN" },
+  ];
   const CORE_EVIDENCE = ["watch", "piano", "metronome", "door", "midi", "access", "amplifier", "toolcase"];
   const REQUIRED_LINKS = ["false-time", "machine-rhythm", "system-lie", "cloned-card", "misaki-slip"];
   const MINI_GAME_EVIDENCE = ["watch", "piano", "metronome", "midi", "access"];
@@ -20,10 +26,10 @@
   const el = {
     app: $("#app"), title: $("#title-screen"), game: $("#game-screen"), newGame: $("#new-game-button"),
     continueGame: $("#continue-button"), objective: $("#objective-label"), phase: $("#phase-label"),
-    sound: $("#sound-button"), notebookButton: $("#notebook-button"), recordCount: $("#record-count"),
+    sound: $("#sound-button"), textSize: $("#text-size-button"), notebookButton: $("#notebook-button"), recordCount: $("#record-count"),
     scene: $("#scene"), sceneCaption: $("#scene-caption"), sceneTip: $("#scene-tip"), objectLayer: $("#object-layer"),
     locationNav: $("#location-nav"), portrait: $("#portrait"), speaker: $("#speaker-name"), speakerRole: $("#speaker-role"),
-    dialogue: $("#dialogue-text"), choices: $("#choice-list"), next: $("#next-button"), dialoguePanel: $("#dialogue-panel"),
+    dialogue: $("#dialogue-text"), choices: $("#choice-list"), next: $("#next-button"), dialoguePanel: $("#dialogue-panel"), replayVoice: $("#replay-voice"),
     interrogationTools: $("#interrogation-tools"), tensionFill: $("#tension-fill"), pinStatement: $("#pin-statement"),
     notebook: $("#notebook"), notebookContent: $("#notebook-content"), inspection: $("#inspection"),
     inspectionTitle: $("#inspection-title"), inspectionVisual: $("#inspection-visual"), inspectionGlyph: $("#inspection-glyph"),
@@ -46,6 +52,12 @@
     rina: ["Aoyama Rina", "Nghệ sĩ piano"], yuto: ["Senda Yuto", "Kỹ thuật viên âm thanh"],
     misaki: ["Kisaragi Misaki", "Quản lý nhà hát"], haru: ["Nishino Haru", "Phóng viên âm nhạc"],
     narrator: ["Hồ sơ vụ án", "Tường thuật"],
+  };
+
+  const voiceStyles = {
+    narrator: { rate: .9, pitch: .82 }, conan: { rate: 1.04, pitch: 1.08 },
+    ran: { rate: 1, pitch: 1.12 }, kogoro: { rate: .96, pitch: .78 }, megure: { rate: .92, pitch: .72 },
+    rina: { rate: .98, pitch: 1.08 }, misaki: { rate: .93, pitch: 1.02 }, haru: { rate: .98, pitch: .86 }, yuto: { rate: .9, pitch: .8 },
   };
 
   const prologue = [
@@ -260,7 +272,7 @@
 
   let queue = [], queueDone = null, typingTimer = 0, fullText = "", typing = false, toastTimer = 0;
   let pendingEvidence = null, selectedStatement = null, selectedEvidence = null, selectedFinalCard = null;
-  let currentInterviewId = null, currentDialogueLine = null, currentPinAttempted = false, selectedTimelineEvent = null;
+  let currentInterviewId = null, currentDialogueLine = null, currentPinAttempted = false, selectedTimelineEvent = null, currentVoiceLine = null;
   let audioContext = null, masterGain = null, scoreTimer = 0, scoreStep = 0;
 
   function serialize() {
@@ -296,6 +308,41 @@
 
   function showGame() { el.title.classList.remove("active"); el.game.classList.add("active"); }
 
+  function speakLine(text, who = "narrator") {
+    currentVoiceLine = { text, who };
+    const supported = "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function";
+    el.replayVoice.hidden = !supported;
+    el.replayVoice.disabled = !state.sound;
+    if (!supported || !state.sound) return;
+    window.speechSynthesis.cancel();
+    const utterance = new window.SpeechSynthesisUtterance(text);
+    const style = voiceStyles[who] || voiceStyles.narrator;
+    utterance.lang = "vi-VN"; utterance.rate = style.rate; utterance.pitch = style.pitch; utterance.volume = .96;
+    const vietnameseVoices = window.speechSynthesis.getVoices().filter((voice) => voice.lang?.toLowerCase().startsWith("vi"));
+    if (vietnameseVoices.length) {
+      const voiceIndex = Math.abs([...who].reduce((sum, character) => sum + character.charCodeAt(0), 0)) % vietnameseVoices.length;
+      utterance.voice = vietnameseVoices[voiceIndex];
+    }
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function replayCurrentVoice() {
+    if (currentVoiceLine) speakLine(currentVoiceLine.text, currentVoiceLine.who);
+  }
+
+  function applyTextSize(sizeId) {
+    const size = TEXT_SIZES.find((item) => item.id === sizeId) || TEXT_SIZES[1];
+    document.documentElement.dataset.textSize = size.id;
+    el.textSize.textContent = `CHỮ: ${size.label}`;
+    el.textSize.setAttribute("aria-label", `Đổi cỡ chữ, hiện tại: ${size.label.toLowerCase()}`);
+    localStorage.setItem(TEXT_SIZE_KEY, size.id);
+  }
+
+  function cycleTextSize() {
+    const current = TEXT_SIZES.findIndex((item) => item.id === document.documentElement.dataset.textSize);
+    applyTextSize(TEXT_SIZES[(current + 1) % TEXT_SIZES.length].id);
+  }
+
   function setPhase(phase, label) {
     state.phase = phase; el.phase.textContent = label; updateObjective(); save();
   }
@@ -325,8 +372,9 @@
     if (!typing) return false; clearInterval(typingTimer); el.dialogue.textContent = fullText; typing = false; return true;
   }
 
-  function typeLine(text) {
+  function typeLine(text, who = "narrator") {
     clearInterval(typingTimer); fullText = text; el.dialogue.textContent = ""; typing = true;
+    speakLine(text, who);
     let index = 0; const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     typingTimer = setInterval(() => {
       index = Math.min(text.length, index + (reduced ? text.length : 2)); el.dialogue.textContent = text.slice(0, index);
@@ -344,7 +392,7 @@
   }
 
   function setDialogue(who, text, { next = false, choices = [] } = {}) {
-    currentDialogueLine = null; currentPinAttempted = false; hideInterrogationTools(); setPortrait(who); typeLine(text); el.next.hidden = !next; renderChoices(choices);
+    currentDialogueLine = null; currentPinAttempted = false; hideInterrogationTools(); setPortrait(who); typeLine(text, who); el.next.hidden = !next; renderChoices(choices);
   }
 
   function playDialogue(lines, done) { queue = [...lines]; queueDone = done || null; nextLine(); }
@@ -353,7 +401,7 @@
       currentDialogueLine = null; hideInterrogationTools(); el.next.hidden = true;
       const done = queueDone; queueDone = null; if (done) done(); return;
     }
-    const line = queue.shift(); currentDialogueLine = line; currentPinAttempted = false; setPortrait(line.who); typeLine(line.text); el.next.hidden = false; renderChoices([]); renderInterrogationTools(line);
+    const line = queue.shift(); currentDialogueLine = line; currentPinAttempted = false; setPortrait(line.who); typeLine(line.text, line.who); el.next.hidden = false; renderChoices([]); renderInterrogationTools(line);
   }
   function advanceDialogue() { if (!finishTyping()) nextLine(); }
 
@@ -884,7 +932,11 @@
   }
 
   function toggleSound() {
-    state.sound = !state.sound; ensureAudio(); masterGain.gain.setTargetAtTime(state.sound ? .7 : 0, audioContext.currentTime, .04); el.sound.textContent = `ÂM: ${state.sound ? "BẬT" : "TẮT"}`; save();
+    state.sound = !state.sound; ensureAudio(); masterGain.gain.setTargetAtTime(state.sound ? .7 : 0, audioContext.currentTime, .04);
+    if (!state.sound && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    if (state.sound) replayCurrentVoice();
+    el.replayVoice.disabled = !state.sound;
+    el.sound.textContent = `ÂM: ${state.sound ? "BẬT" : "TẮT"}`; save();
   }
 
   function beginNewGame() {
@@ -908,6 +960,8 @@
   }
 
   el.newGame.addEventListener("click", beginNewGame); el.continueGame.addEventListener("click", continueSaved); el.sound.addEventListener("click", toggleSound);
+  el.textSize.addEventListener("click", cycleTextSize);
+  el.replayVoice.addEventListener("click", (event) => { event.stopPropagation(); replayCurrentVoice(); });
   el.notebookButton.addEventListener("click", openNotebook); el.next.addEventListener("click", (event) => { event.stopPropagation(); advanceDialogue(); });
   el.pinStatement.addEventListener("click", (event) => { event.stopPropagation(); pinCurrentStatement(); });
   el.dialoguePanel.addEventListener("click", (event) => { if (event.target.closest("button")) return; if (!el.next.hidden) advanceDialogue(); });
@@ -925,5 +979,6 @@
     if (event.key.toLowerCase() === "n" && el.game.classList.contains("active")) openNotebook();
   });
 
+  applyTextSize(localStorage.getItem(TEXT_SIZE_KEY) || "large");
   el.continueGame.hidden = !readSave(); updateObjective();
 })();

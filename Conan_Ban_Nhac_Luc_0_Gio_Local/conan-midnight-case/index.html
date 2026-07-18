@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" data-text-size="large">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#06111b" />
-    <meta name="description" content="Fan game trinh thám 2D: Bản Nhạc Lúc 0 Giờ." />
+    <meta name="description" content="Fan game trinh thám 2D có voice và điều tra tương tác: Bản Nhạc Lúc 0 Giờ." />
     <title>Conan — Bản Nhạc Lúc 0 Giờ</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./styles.css" />
@@ -36,7 +36,8 @@
           <div class="case-status">
             <span id="objective-label" class="objective-label">Đọc mở đầu vụ án</span>
             <span id="phase-label">Mở đầu</span>
-            <button id="sound-button" class="icon-button" type="button" aria-label="Bật hoặc tắt âm thanh">ÂM: BẬT</button>
+            <button id="text-size-button" class="icon-button text-size-button" type="button" aria-label="Đổi cỡ chữ, hiện tại: lớn">CHỮ: LỚN</button>
+            <button id="sound-button" class="icon-button" type="button" aria-label="Bật hoặc tắt nhạc, hiệu ứng và giọng đọc">ÂM: BẬT</button>
             <button id="notebook-button" class="icon-button notebook-button" type="button" aria-label="Mở sổ điều tra">SỔ <b id="record-count">0</b></button>
           </div>
         </header>
@@ -58,7 +59,10 @@
           <span class="dialogue-kicker">HỘI THOẠI</span>
           <div id="portrait" class="portrait conan" aria-hidden="true"></div>
           <div class="dialogue-copy">
-            <div class="speaker-line"><strong id="speaker-name">Edogawa Conan</strong><span id="speaker-role">Thám tử</span></div>
+            <div class="speaker-line">
+              <strong id="speaker-name">Edogawa Conan</strong><span id="speaker-role">Thám tử</span>
+              <button id="replay-voice" class="replay-voice" type="button" aria-label="Nghe lại câu hiện tại" hidden>↻ NGHE LẠI</button>
+            </div>
             <div id="interrogation-tools" class="interrogation-tools" hidden>
               <span>CĂNG THẲNG</span><i><b id="tension-fill"></b></i>
               <button id="pin-statement" type="button">GHIM CÂU NÀY</button>
