@@ -274,6 +274,7 @@
   let pendingEvidence = null, selectedStatement = null, selectedEvidence = null, selectedFinalCard = null;
   let currentInterviewId = null, currentDialogueLine = null, currentPinAttempted = false, selectedTimelineEvent = null, currentVoiceLine = null;
   let voiceSequence = 0, vietnameseVoices = [], voiceWaitTimer = 0, pendingVoiceRequest = null, voiceUnavailableNotified = false;
+  let cloudVoiceController = null, cloudVoiceSource = null, cloudVoiceFrame = 0;
   let audioContext = null, masterGain = null, scoreTimer = 0, scoreStep = 0;
 
   function serialize() {
@@ -313,6 +314,10 @@
     return "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function";
   }
 
+  function supportsCloudVoice() {
+    return ["http:", "https:"].includes(location.protocol) && typeof window.fetch === "function";
+  }
+
   function refreshVietnameseVoices() {
     vietnameseVoices = supportsSpeechSynthesis()
       ? window.speechSynthesis.getVoices().filter((voice) => {
@@ -322,7 +327,7 @@
           || /vietnam|việt|hoài\s*my|hoaimy|nam\s*minh|namminh|microsoft\s+an\b/i.test(name);
       })
       : [];
-    el.replayVoice.hidden = !vietnameseVoices.length;
+    el.replayVoice.hidden = !vietnameseVoices.length && !supportsCloudVoice();
     el.replayVoice.disabled = !state.sound;
     if (vietnameseVoices.length) {
       voiceUnavailableNotified = false;
@@ -360,6 +365,90 @@
       index = Math.min(text.length, index + (reduced ? text.length : 2)); el.dialogue.textContent = text.slice(0, index);
       if (index >= text.length) { clearInterval(typingTimer); typing = false; }
     }, reduced ? 1 : 16);
+  }
+
+  function stopCloudVoice() {
+    cloudVoiceController?.abort(); cloudVoiceController = null;
+    cancelAnimationFrame(cloudVoiceFrame); cloudVoiceFrame = 0;
+    if (cloudVoiceSource) {
+      try { cloudVoiceSource.stop(); } catch { /* The source may not have started yet. */ }
+      cloudVoiceSource.disconnect?.(); cloudVoiceSource = null;
+    }
+    el.replayVoice.textContent = "↻ NGHE LẠI";
+  }
+
+  function decodeBase64Audio(base64) {
+    const binary = atob(base64); const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    return bytes.buffer;
+  }
+
+  function fallbackTimings(text, durationSeconds) {
+    const parts = text.match(/\S+\s*/g) || [text];
+    const duration = Math.max(500, durationSeconds * 1000);
+    return parts.map((part, index) => ({
+      part,
+      start: Math.floor(duration * index / parts.length),
+      end: Math.floor(duration * (index + 1) / parts.length),
+    }));
+  }
+
+  function playCloudVoice(text, who, token) {
+    if (!state.sound || !supportsCloudVoice()) return false;
+    stopCloudVoice();
+    const controller = new AbortController(); cloudVoiceController = controller;
+    el.replayVoice.hidden = false; el.replayVoice.disabled = true; el.replayVoice.textContent = "… TẢI GIỌNG";
+    const query = new URLSearchParams({ text, who });
+
+    window.fetch(`/api/tts?${query}`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(`TTS ${response.status}`);
+        return response.json();
+      })
+      .then(async (payload) => {
+        if (controller.signal.aborted || token !== voiceSequence || !typing || !state.sound) return;
+        ensureAudio();
+        const buffer = await audioContext.decodeAudioData(decodeBase64Audio(payload.audio));
+        if (controller.signal.aborted || token !== voiceSequence || !typing || !state.sound) return;
+
+        const source = audioContext.createBufferSource(); source.buffer = buffer; source.connect(masterGain);
+        const timings = Array.isArray(payload.timings) && payload.timings.length
+          ? payload.timings
+          : fallbackTimings(text, buffer.duration);
+        const startedAt = audioContext.currentTime;
+        cloudVoiceSource = source; cloudVoiceController = null;
+        el.replayVoice.disabled = false; el.replayVoice.textContent = "↻ NGHE LẠI";
+        el.sound.title = `Giọng Việt trực tuyến: ${payload.voice || "đã sẵn sàng"}`;
+
+        const syncSubtitle = () => {
+          if (token !== voiceSequence || !typing || cloudVoiceSource !== source) return;
+          const elapsed = (audioContext.currentTime - startedAt) * 1000;
+          let visible = "";
+          for (const timing of timings) {
+            if (Number(timing.start) > elapsed + 35) break;
+            visible += String(timing.part || "");
+          }
+          if (visible) el.dialogue.textContent = text.startsWith(visible) ? text.slice(0, visible.length) : visible;
+          cloudVoiceFrame = requestAnimationFrame(syncSubtitle);
+        };
+        source.onended = () => {
+          if (token !== voiceSequence || cloudVoiceSource !== source) return;
+          cancelAnimationFrame(cloudVoiceFrame); cloudVoiceFrame = 0; cloudVoiceSource = null;
+          el.dialogue.textContent = text; typing = false;
+        };
+        source.start(); syncSubtitle();
+      })
+      .catch((error) => {
+        if (error.name === "AbortError" || token !== voiceSequence || !typing) return;
+        cloudVoiceController = null; el.replayVoice.disabled = !state.sound; el.replayVoice.textContent = "↻ NGHE LẠI";
+        if (state.sound && supportsSpeechSynthesis()) waitForVietnameseVoice(text, who, token);
+        else startTypewriter(text, token, el.dialogue.textContent.length);
+        if (!voiceUnavailableNotified) {
+          voiceUnavailableNotified = true;
+          toast("Giọng Việt trực tuyến đang lỗi; game đã chuyển về phụ đề.");
+        }
+      });
+    return true;
   }
 
   function cancelVoiceWait() {
@@ -402,6 +491,7 @@
 
   function playLineWithVoiceFallback(text, who, token) {
     if (speakLine(text, who, token)) return;
+    if (playCloudVoice(text, who, token)) return;
     if (state.sound && supportsSpeechSynthesis()) waitForVietnameseVoice(text, who, token);
     else startTypewriter(text, token);
   }
@@ -429,7 +519,7 @@
     };
     utterance.onerror = () => {
       if (token !== voiceSequence || !typing) return;
-      startTypewriter(text, token, el.dialogue.textContent.length);
+      if (!playCloudVoice(text, who, token)) startTypewriter(text, token, el.dialogue.textContent.length);
     };
     window.speechSynthesis.resume?.();
     window.speechSynthesis.speak(utterance);
@@ -438,7 +528,7 @@
 
   function replayCurrentVoice() {
     if (!currentVoiceLine) return;
-    clearInterval(typingTimer); cancelVoiceWait(); const token = ++voiceSequence;
+    clearInterval(typingTimer); cancelVoiceWait(); stopCloudVoice(); const token = ++voiceSequence;
     if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
     fullText = currentVoiceLine.text; el.dialogue.textContent = ""; typing = true;
     playLineWithVoiceFallback(currentVoiceLine.text, currentVoiceLine.who, token);
@@ -484,13 +574,13 @@
 
   function finishTyping() {
     if (!typing) return false;
-    clearInterval(typingTimer); cancelVoiceWait(); voiceSequence += 1;
+    clearInterval(typingTimer); cancelVoiceWait(); stopCloudVoice(); voiceSequence += 1;
     if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
     el.dialogue.textContent = fullText; typing = false; return true;
   }
 
   function typeLine(text, who = "narrator") {
-    clearInterval(typingTimer); cancelVoiceWait(); const token = ++voiceSequence;
+    clearInterval(typingTimer); cancelVoiceWait(); stopCloudVoice(); const token = ++voiceSequence;
     if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
     fullText = text; el.dialogue.textContent = ""; typing = true;
     playLineWithVoiceFallback(text, who, token);
@@ -1047,8 +1137,9 @@
 
   function toggleSound() {
     state.sound = !state.sound; ensureAudio(); masterGain.gain.setTargetAtTime(state.sound ? .7 : 0, audioContext.currentTime, .04);
-    if (!state.sound && supportsSpeechSynthesis()) {
-      cancelVoiceWait(); voiceSequence += 1; window.speechSynthesis.cancel();
+    if (!state.sound) {
+      cancelVoiceWait(); stopCloudVoice(); voiceSequence += 1;
+      if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
       if (typing) { clearInterval(typingTimer); el.dialogue.textContent = fullText; typing = false; }
     }
     if (state.sound) replayCurrentVoice();

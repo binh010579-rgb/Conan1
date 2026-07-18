@@ -8,13 +8,13 @@ Fan game trinh thám 2D chơi trực tiếp trong trình duyệt. Chương đầ
 2. Nhấp đúp `index.html` và mở bằng Chrome hoặc Edge.
 3. Chọn **Bắt đầu vụ án**. Bản V4 dùng vùng lưu riêng nên không bị lẫn tiến độ cũ.
 
-Game không cần cài Node.js, không gọi API và không tải tài nguyên từ Internet.
+Game không cần cài Node.js khi chơi. Bản triển khai Vercel dùng một hàm máy chủ nhỏ để phát giọng Việt khi máy người chơi không có voice `vi-VN`; vì vậy chế độ voice dự phòng cần kết nối Internet.
 
 ### Điều khiển
 
 - Bấm khung hội thoại, nút **TIẾP TỤC** hoặc phím `Space` để đọc tiếp.
 - Bấm **CHỮ: LỚN** trên thanh hồ sơ để chuyển giữa ba cỡ chữ: vừa, lớn và rất lớn. Game ghi nhớ lựa chọn này cho lần chơi sau.
-- Game chờ Chrome tải giọng Việt (`vi-VN`) rồi mới phát và phụ đề hiện theo đúng từng từ đang được đọc. Bấm **↻ NGHE LẠI** để phát lại; nút **ÂM** điều khiển cả nhạc, hiệu ứng và giọng đọc. Nếu thiết bị thật sự không có giọng Việt, game giữ phụ đề và không tự chuyển sang giọng ngoại ngữ.
+- Game ưu tiên voice Việt (`vi-VN`) có sẵn trong máy. Nếu Chrome không cung cấp voice Việt, bản Vercel tự lấy giọng Việt từ hàm TTS của game; phụ đề vẫn hiện theo đúng từ đang được đọc. Bấm **↻ NGHE LẠI** để phát lại; nút **ÂM** điều khiển cả nhạc, hiệu ứng và giọng đọc.
 - Trong lúc hỏi cung, bấm **GHIM CÂU ĐÁNG NGỜ** ngay khi nghi phạm nói một chi tiết có thể kiểm chứng. Nếu bỏ lỡ, bạn phải nghe lại lời khai.
 - Rê chuột hoặc chạm trực tiếp vào đồ vật có thật trong ba cảnh; vật khả nghi chỉ phản sáng nhẹ, không có dấu `+`.
 - Thao tác trực tiếp trên vật chứng: lau đồng hồ, soi UV cây đàn, lắp quả nặng, ráp log và đồng bộ hai bản ghi.
@@ -29,6 +29,7 @@ Game không cần cài Node.js, không gọi API và không tải tài nguyên t
 - `assets/` — bối cảnh và chân dung anime-noir nguyên bản, đã nén để chơi local nhanh.
 - `styles.css` — bố cục visual novel, hoạt ảnh, màu sắc và responsive.
 - `game.js` — cốt truyện, chứng cứ, nghi phạm, hội thoại, lưu game và hệ thống suy luận.
+- `api/tts.js` — voice tiếng Việt dự phòng cho bản Vercel khi trình duyệt không có giọng phù hợp.
 - `AGENTS.md` — hướng dẫn ngắn cho Codex khi sửa game sau này.
 - `NOTICE.md` — ghi chú fan project và quyền sở hữu nhân vật.
 
@@ -47,6 +48,7 @@ Game không cần cài Node.js, không gọi API và không tải tài nguyên t
 - Xếp hạng S/A/B/C dựa trên số lần đối chiếu và suy luận sai.
 - Lưu tiến độ bằng `localStorage`.
 - Nhạc piano trinh thám nguyên bản được tổng hợp trực tiếp bằng Web Audio.
+- Voice dự phòng dùng `node-edge-tts` (MIT) để tạo âm thanh tiếng Việt ở phía máy chủ; không dùng bản ghi từ anime.
 - Hỗ trợ máy tính và điện thoại.
 
 ## Đưa lên GitHub
