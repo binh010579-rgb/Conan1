@@ -1,11 +1,13 @@
 {
-  "name": "conan-midnight-case",
-  "version": "4.2.0",
+  "name": "ho-so-0-gio",
+  "version": "1.0.0",
   "private": true,
-  "engines": {
-    "node": ">=20"
+  "type": "module",
+  "scripts": {
+    "check": "node --check game.js",
+    "test": "node tests/playthrough.mjs"
   },
-  "dependencies": {
-    "node-edge-tts": "1.2.10"
+  "devDependencies": {
+    "jsdom": "29.1.1"
   }
 }
