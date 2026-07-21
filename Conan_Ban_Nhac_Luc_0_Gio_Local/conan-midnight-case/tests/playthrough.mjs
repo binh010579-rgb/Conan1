@@ -187,11 +187,9 @@ const evidencePlan = {
   },
   piano: {
     mini: async (document) => {
-      const targets = await waitFor(() => {
-        const items = [...document.querySelectorAll("[data-uv-target]")];
-        return items.length === 3 ? items : null;
-      }, "ba vùng UV");
-      targets.forEach((target) => target.click());
+      for (const id of ["keys", "pedals"]) {
+        (await waitFor(() => document.querySelector(`[data-uv-target="${id}"]`), `vùng UV ${id}`)).click();
+      }
     },
     deduction: "không do người trực tiếp biểu diễn",
   },
@@ -415,7 +413,73 @@ async function verifyPenaltyHintAndStrictRank(serialized) {
   rankGame.dom.window.close();
 }
 
+async function verifyForensicProgressAndDecoys(serialized) {
+  const pianoSave = JSON.parse(serialized);
+  pianoSave.phase = "investigation";
+  pianoSave.location = "studio";
+  pianoSave.evidence = pianoSave.evidence.filter((id) => id !== "piano");
+  pianoSave.miniGames = pianoSave.miniGames.filter((id) => id !== "piano");
+  pianoSave.deductions = pianoSave.deductions.filter((id) => id !== "piano");
+  pianoSave.inspections.piano = [];
+  pianoSave.miniProgress = {};
+  pianoSave.mistakes = 0;
+  pianoSave.rank = null;
+
+  const pianoGame = createGame(JSON.stringify(pianoSave));
+  pianoGame.document.querySelector("#continue-button").click();
+  await openEvidence(pianoGame.document, "piano");
+  pianoGame.document.querySelector('[data-uv-target="stand"]').click();
+  assert.equal(pianoGame.document.querySelector("#focus-label").textContent, "TẬP TRUNG 94", "Vùng UV vô nghĩa phải trừ Tập trung");
+  pianoGame.document.querySelector('[data-uv-target="stand"]').click();
+  assert.equal(pianoGame.document.querySelector("#focus-label").textContent, "TẬP TRUNG 94", "Cùng một vùng UV sai chỉ bị phạt một lần");
+  pianoGame.document.querySelector('[data-uv-target="keys"]').click();
+  let progressSave = JSON.parse(pianoGame.window.localStorage.getItem(SAVE_KEY));
+  assert.deepEqual(progressSave.miniProgress.piano.found, ["keys"]);
+  assert.deepEqual(progressSave.miniProgress.piano.rejected, ["stand"]);
+  pianoGame.document.querySelector("#inspection-close").click();
+  await openEvidence(pianoGame.document, "piano");
+  assert(pianoGame.document.querySelector('[data-uv-target="keys"]').classList.contains("found"), "Vùng UV đúng phải được khôi phục");
+  assert(pianoGame.document.querySelector('[data-uv-target="stand"]').classList.contains("rejected"), "Vùng UV bị loại phải được khôi phục");
+  pianoGame.document.querySelector('[data-uv-target="pedals"]').click();
+  await waitFor(() => buttonByText(pianoGame.document, pianoGame.document.querySelector("#inspection-actions"), "không do người trực tiếp biểu diễn"), "suy luận sau truy dấu đàn", 2500);
+  progressSave = JSON.parse(pianoGame.window.localStorage.getItem(SAVE_KEY));
+  assert.equal(progressSave.miniProgress.piano, undefined, "Tiến độ tạm phải được dọn sau khi giải xong piano");
+  assert.deepEqual(pianoGame.browserErrors, [], `Không được có lỗi ở thử nghiệm piano: ${pianoGame.browserErrors.map(String).join("\n")}`);
+  pianoGame.dom.window.close();
+
+  const accessSave = JSON.parse(serialized);
+  accessSave.phase = "investigation";
+  accessSave.location = "control";
+  accessSave.evidence = accessSave.evidence.filter((id) => id !== "access");
+  accessSave.miniGames = accessSave.miniGames.filter((id) => id !== "access");
+  accessSave.deductions = accessSave.deductions.filter((id) => id !== "access");
+  accessSave.inspections.access = [];
+  accessSave.miniProgress = {};
+  accessSave.mistakes = 0;
+  accessSave.rank = null;
+
+  const accessGame = createGame(JSON.stringify(accessSave));
+  accessGame.document.querySelector("#continue-button").click();
+  await openEvidence(accessGame.document, "access");
+  accessGame.document.querySelector('[data-log-id="head"]').click();
+  accessGame.document.querySelector('[data-log-id="code"]').click();
+  let accessProgress = JSON.parse(accessGame.window.localStorage.getItem(SAVE_KEY));
+  assert.deepEqual(accessProgress.miniProgress.access.chosen, ["head", "code"]);
+  accessGame.document.querySelector("#inspection-close").click();
+  await openEvidence(accessGame.document, "access");
+  assert.equal(accessGame.document.querySelectorAll("[data-log-remove]").length, 2, "Hai trường log phải được khôi phục");
+  accessGame.document.querySelector('[data-log-id="crc"]').click();
+  accessGame.document.querySelector('[data-log-id="delete"]').click();
+  accessGame.document.querySelector("[data-log-check]").click();
+  await waitFor(() => buttonByText(accessGame.document, accessGame.document.querySelector("#inspection-actions"), "Một bản sao S-04 mở cửa"), "suy luận sau giải mã log", 2500);
+  accessProgress = JSON.parse(accessGame.window.localStorage.getItem(SAVE_KEY));
+  assert.equal(accessProgress.miniProgress.access, undefined, "Tiến độ tạm phải được dọn sau khi giải xong log");
+  assert.deepEqual(accessGame.browserErrors, [], `Không được có lỗi ở thử nghiệm log: ${accessGame.browserErrors.map(String).join("\n")}`);
+  accessGame.dom.window.close();
+}
+
 const serialized = await runPerfectPlaythrough();
 await verifyContinue(serialized);
 await verifyPenaltyHintAndStrictRank(serialized);
-console.log("PASS: full UI playthrough, strict S+, penalty hint, save/continue, 0 browser errors");
+await verifyForensicProgressAndDecoys(serialized);
+console.log("PASS: full UI playthrough, deeper forensics, strict S+, saved mini-progress, penalty hint, 0 browser errors");

@@ -319,7 +319,7 @@
   const state = {
     phase: "title", location: "hall", interviews: new Set(), statementCards: new Set(["crowd-time"]),
     pinnedStatements: new Set(), suspectPressure: {}, evidence: new Set(), inspections: {}, miniGames: new Set(),
-    links: new Set(), deductions: new Set(), deductionFailures: {}, audioSolved: false, timelineSlots: {}, timelineSolved: false, mistakes: 0,
+    links: new Set(), deductions: new Set(), deductionFailures: {}, miniProgress: {}, audioSolved: false, timelineSlots: {}, timelineSolved: false, mistakes: 0,
     final: {}, sound: true, rank: null,
   };
 
@@ -357,7 +357,9 @@
     state.evidence = new Set(saved.evidence || []); state.inspections = {};
     Object.entries(saved.inspections || {}).forEach(([id, values]) => { state.inspections[id] = new Set(values); });
     state.miniGames = new Set(saved.miniGames || []); state.links = new Set(saved.links || []); state.deductions = new Set(saved.deductions || []);
-    state.deductionFailures = saved.deductionFailures || {}; state.audioSolved = Boolean(saved.audioSolved);
+    state.deductionFailures = saved.deductionFailures || {};
+    state.miniProgress = saved.miniProgress && typeof saved.miniProgress === "object" ? saved.miniProgress : {};
+    state.audioSolved = Boolean(saved.audioSolved);
     state.timelineSlots = saved.timelineSlots || {}; state.timelineSolved = Boolean(saved.timelineSolved); state.mistakes = saved.mistakes || 0;
     state.final = saved.final || {}; state.sound = saved.sound !== false; state.rank = saved.rank || null;
   }
@@ -879,25 +881,50 @@
   }
 
   function renderUvGame() {
+    const zones = [
+      { id: "keys", label: "DÃY PHÍM", x: "56%", y: "43%", valid: true, finding: "Phím cao trào không có vệt dầu tay mới; lớp bụi chạy liền qua các khe." },
+      { id: "pedals", label: "BÀN ĐẠP VANG", x: "50%", y: "70%", valid: true, finding: "Bụi trên bàn đạp vang còn nguyên. Một màn biểu diễn thật không thể bỏ qua tiếp xúc này." },
+      { id: "stand", label: "GIÁ NHẠC", x: "37%", y: "25%", valid: false, rejection: "Giá nhạc có thể không được chạm trong lúc biểu diễn; dấu ở đây không kiểm chứng được tiếng đàn." },
+      { id: "rim", label: "MÉP NẮP", x: "78%", y: "57%", valid: false, rejection: "Mép nắp không phải bề mặt bắt buộc phải chạm khi chơi bản nhạc." },
+      { id: "bench", label: "GHẾ ĐÀN", x: "24%", y: "70%", valid: false, rejection: "Ghế có thể đã được dùng từ trước. Nó không chứng minh ai chơi đàn lúc 23:50." },
+    ];
+    const stored = state.miniProgress.piano && typeof state.miniProgress.piano === "object" ? state.miniProgress.piano : {};
+    const found = new Set(Array.isArray(stored.found) ? stored.found.filter((id) => zones.some((zone) => zone.id === id && zone.valid)) : []);
+    const rejected = new Set(Array.isArray(stored.rejected) ? stored.rejected.filter((id) => zones.some((zone) => zone.id === id && !zone.valid)) : []);
     el.miniGameHost.innerHTML = `
       <div class="uv-game" data-uv-stage>
-        <p>Rê đèn UV qua ba vùng của cây đàn rồi chạm vào dấu vết phát sáng.</p>
+        <p>Rina nói một màn diễn thật phải để lại tiếp xúc trên cơ cấu chơi đàn. Quét và khóa đúng <strong>hai bề mặt bắt buộc</strong>.</p>
         <div class="piano-silhouette" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <button type="button" data-uv-target="keys" style="--x:56%;--y:39%" aria-label="Soi dãy phím">DÃY PHÍM</button>
-        <button type="button" data-uv-target="pedals" style="--x:50%;--y:78%" aria-label="Soi bàn đạp">BÀN ĐẠP</button>
-        <button type="button" data-uv-target="rail" style="--x:25%;--y:56%" aria-label="Soi mép đàn">MÉP ĐÀN</button>
-        <span class="uv-beam" aria-hidden="true"></span><output>0 / 3 dấu vết</output>
+        ${zones.map((zone) => `<button type="button" data-uv-target="${zone.id}" data-uv-valid="${zone.valid}" style="--x:${zone.x};--y:${zone.y}" aria-label="Quét ${zone.label.toLowerCase()}" aria-pressed="${found.has(zone.id)}">${zone.label}</button>`).join("")}
+        <span class="uv-beam" aria-hidden="true"></span>
+        <output><span>${found.size} / 2 tiếp xúc then chốt</span><small>Không đánh dấu theo cảm tính: một lựa chọn sai sẽ giảm Tập trung.</small></output>
       </div>`;
-    const stage = $("[data-uv-stage]", el.miniGameHost); const beam = $(".uv-beam", stage); const output = $("output", stage); const found = new Set();
+    const stage = $("[data-uv-stage]", el.miniGameHost); const beam = $(".uv-beam", stage); const output = $("output", stage);
+    const persist = () => {
+      state.miniProgress.piano = { found: [...found], rejected: [...rejected] };
+      save();
+    };
+    const setReadout = (headline, detail) => { output.innerHTML = `<span>${headline}</span><small>${detail}</small>`; };
     stage.addEventListener("pointermove", (event) => {
       const box = stage.getBoundingClientRect(); const x = box.width ? event.clientX - box.left : event.clientX; const y = box.height ? event.clientY - box.top : event.clientY;
       beam.style.transform = `translate(${x}px,${y}px)`;
     });
-    $$('[data-uv-target]', stage).forEach((button) => button.addEventListener("click", () => {
-      if (found.has(button.dataset.uvTarget)) return; found.add(button.dataset.uvTarget); button.classList.add("found");
-      output.textContent = `${found.size} / 3 dấu vết`; playTone(510 + found.size * 110, .12, "sine", .018);
-      if (found.size === 3) solveMiniGame("piano");
-    }));
+    $$('[data-uv-target]', stage).forEach((button) => {
+      const zone = zones.find((item) => item.id === button.dataset.uvTarget);
+      button.classList.toggle("found", found.has(zone.id)); button.classList.toggle("rejected", rejected.has(zone.id));
+      button.addEventListener("click", () => {
+        if (zone.valid) {
+          if (found.has(zone.id)) { setReadout(`${found.size} / 2 tiếp xúc then chốt`, zone.finding); return; }
+          found.add(zone.id); button.classList.add("found"); button.setAttribute("aria-pressed", "true"); persist();
+          setReadout(`${found.size} / 2 tiếp xúc then chốt`, zone.finding); playTone(510 + found.size * 110, .12, "sine", .018);
+          if (found.size === 2) setTimeout(() => solveMiniGame("piano"), 520);
+          return;
+        }
+        if (rejected.has(zone.id)) { setReadout(`${found.size} / 2 tiếp xúc then chốt`, zone.rejection); return; }
+        rejected.add(zone.id); button.classList.add("rejected"); registerMistake(); persist();
+        setReadout("Giả thuyết bị loại", zone.rejection); stage.classList.remove("wrong"); void stage.offsetWidth; stage.classList.add("wrong"); playTone(118, .18, "sawtooth", .018);
+      });
+    });
   }
 
   function renderFitGame() {
@@ -929,28 +956,33 @@
 
   function renderLogGame() {
     const fragments = [
-      ["delete", "00:04 / CENTRAL DELETE"], ["crc", "CRC ≠ ORIGINAL"], ["head", "23:12 / READER HEAD"], ["code", "S-04 / COPY FLAG"],
+      ["delete", "00:04 / CENTRAL DELETE"], ["crc", "CRC 9F2A ≠ GỐC 77C1"], ["head", "23:12 / READER HEAD"],
+      ["code", "TOKEN S-04 / READ"], ["midi", "23:50 / MIDI EXECUTE"], ["amp", "23:52 / AMP TELEMETRY"],
     ];
+    const fragmentIds = new Set(fragments.map(([id]) => id));
+    const stored = state.miniProgress.access && typeof state.miniProgress.access === "object" ? state.miniProgress.access : {};
+    let chosen = Array.isArray(stored.chosen) ? stored.chosen.filter((id) => fragmentIds.has(id)).slice(0, 4) : [];
     el.miniGameHost.innerHTML = `
       <div class="log-game">
-        <p>Chạm các mảnh log theo thứ tự một gói dữ liệu được đầu đọc ghi lại.</p>
+        <p>Khôi phục đúng bốn trường của gói đầu đọc: <strong>thời điểm → mã thẻ → checksum → thao tác trung tâm</strong>. Hai mảnh thuộc hệ thống âm thanh.</p>
         <div class="log-sequence" aria-live="polite"></div>
         <div class="log-fragments">${fragments.map(([id, label]) => `<button type="button" data-log-id="${id}">${label}</button>`).join("")}</div>
         <div class="log-controls"><button type="button" data-log-reset>LÀM LẠI</button><button type="button" data-log-check disabled>GIẢI MÃ</button></div>
-        <output>0 / 4 mảnh đã nối</output>
+        <output>0 / 4 trường đã khóa</output>
       </div>`;
-    const sequence = $(".log-sequence", el.miniGameHost); const output = $("output", el.miniGameHost); const check = $("[data-log-check]", el.miniGameHost); let chosen = [];
+    const sequence = $(".log-sequence", el.miniGameHost); const output = $("output", el.miniGameHost); const check = $("[data-log-check]", el.miniGameHost);
+    const persist = () => { state.miniProgress.access = { chosen: [...chosen] }; save(); };
     const renderSequence = () => {
-      sequence.innerHTML = chosen.length ? chosen.map((id, index) => `<button type="button" data-log-remove="${id}"><small>${index + 1}</small>${fragments.find(([key]) => key === id)[1]}</button>`).join("") : "<span>ĐẶT MẢNH LOG VÀO ĐÂY</span>";
-      $$("[data-log-id]", el.miniGameHost).forEach((button) => { button.disabled = chosen.includes(button.dataset.logId); });
-      $$("[data-log-remove]", sequence).forEach((button) => button.addEventListener("click", () => { chosen = chosen.filter((id) => id !== button.dataset.logRemove); renderSequence(); }));
-      output.textContent = `${chosen.length} / 4 mảnh đã nối`; check.disabled = chosen.length !== 4;
+      sequence.innerHTML = chosen.length ? chosen.map((id, index) => `<button type="button" data-log-remove="${id}"><small>${index + 1}</small>${fragments.find(([key]) => key === id)[1]}</button>`).join("") : "<span>ĐẶT BỐN TRƯỜNG GÓI DỮ LIỆU VÀO ĐÂY</span>";
+      $$("[data-log-id]", el.miniGameHost).forEach((button) => { button.disabled = chosen.includes(button.dataset.logId) || chosen.length === 4; });
+      $$("[data-log-remove]", sequence).forEach((button) => button.addEventListener("click", () => { chosen = chosen.filter((id) => id !== button.dataset.logRemove); persist(); renderSequence(); }));
+      output.textContent = `${chosen.length} / 4 trường đã khóa`; check.disabled = chosen.length !== 4;
     };
-    $$("[data-log-id]", el.miniGameHost).forEach((button) => button.addEventListener("click", () => { chosen.push(button.dataset.logId); renderSequence(); }));
-    $("[data-log-reset]", el.miniGameHost).addEventListener("click", () => { chosen = []; renderSequence(); });
+    $$("[data-log-id]", el.miniGameHost).forEach((button) => button.addEventListener("click", () => { if (chosen.length >= 4) return; chosen.push(button.dataset.logId); persist(); renderSequence(); }));
+    $("[data-log-reset]", el.miniGameHost).addEventListener("click", () => { chosen = []; persist(); renderSequence(); });
     check.addEventListener("click", () => {
       if (chosen.join(",") === "head,code,crc,delete") { solveMiniGame("access"); return; }
-      registerMistake(); output.textContent = "Gói dữ liệu chưa đúng chiều ghi. Thử đọc từ đầu đọc đến thao tác xóa.";
+      registerMistake(); output.textContent = "Gói chưa hợp lệ. Kiểm tra xem có mảnh nào thuộc MIDI/khuếch đại, rồi đọc từ đầu đọc đến thao tác xóa.";
       sequence.classList.remove("wrong"); void sequence.offsetWidth; sequence.classList.add("wrong"); playTone(118, .18, "sawtooth", .018); save();
     });
     renderSequence();
@@ -958,6 +990,7 @@
 
   function solveMiniGame(id) {
     if (state.miniGames.has(id)) return; const item = evidence[id];
+    delete state.miniProgress[id];
     state.miniGames.add(id); if (!state.inspections[id]) state.inspections[id] = new Set();
     item.actions.forEach((_, index) => state.inspections[id].add(index)); el.inspectionTitle.textContent = item.name;
     playChord([48, 55, 60, 64], .75, .012); toast(`Thử nghiệm hoàn tất: ${item.name}`); save(); renderInspection(); updateObjective();
@@ -1237,7 +1270,7 @@
     Object.assign(state, {
       phase: "prologue", location: "hall", interviews: new Set(), statementCards: new Set(["crowd-time"]),
       pinnedStatements: new Set(), suspectPressure: {}, evidence: new Set(), inspections: {}, miniGames: new Set(), links: new Set(),
-      deductions: new Set(), deductionFailures: {}, audioSolved: false, timelineSlots: {}, timelineSolved: false, mistakes: 0, final: {}, rank: null,
+      deductions: new Set(), deductionFailures: {}, miniProgress: {}, audioSolved: false, timelineSlots: {}, timelineSolved: false, mistakes: 0, final: {}, rank: null,
     });
     currentInterviewId = null; currentDialogueLine = null; currentPinAttempted = false; selectedTimelineEvent = null; hideInterrogationTools();
     setPhase("prologue", "Mở đầu"); changeLocation("hall"); playDialogue(prologue, startStatements);
