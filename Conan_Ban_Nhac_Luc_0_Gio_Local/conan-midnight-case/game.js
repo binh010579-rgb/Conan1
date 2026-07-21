@@ -362,7 +362,14 @@
     state.final = saved.final || {}; state.sound = saved.sound !== false; state.rank = saved.rank || null;
   }
 
-  function showGame() { el.title.classList.remove("active"); el.game.classList.add("active"); }
+  function showGame() {
+    const focusedControl = document.activeElement;
+    if (focusedControl && typeof focusedControl.blur === "function") focusedControl.blur();
+    el.title.classList.remove("active");
+    el.game.classList.add("active");
+    el.app.scrollTop = 0;
+    requestAnimationFrame(() => { el.app.scrollTop = 0; });
+  }
 
   function supportsSpeechSynthesis() {
     return "speechSynthesis" in window && typeof window.SpeechSynthesisUtterance === "function";
