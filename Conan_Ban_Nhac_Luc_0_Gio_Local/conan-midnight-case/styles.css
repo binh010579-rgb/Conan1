@@ -276,8 +276,9 @@ dialog::backdrop { background: rgba(1,5,9,.84); backdrop-filter: blur(8px); }
 
 /* Hands-on evidence mini games */
 .inspection-visual.mini-game-active::before, .inspection-visual.mini-game-active::after, .inspection-visual.mini-game-active > i { opacity: .14; }
-.mini-game-host { position: absolute; z-index: 5; inset: 0; display: grid; place-items: center; padding: 22px; }
+.mini-game-host { position: absolute; z-index: 5; inset: 0; display: grid; overflow: auto; place-items: center; padding: 22px; }
 .mini-game-host p { margin: 0; color: #c5d2d7; font-size: .82rem; line-height: 1.5; text-align: center; }
+.mini-game-host p strong { color: var(--gold-bright); font-weight: 700; }
 .mini-game-host output { color: var(--gold-bright); font: 700 .68rem var(--mono); letter-spacing: .05em; }
 .wipe-game, .fit-game, .log-game { display: grid; width: min(100%,360px); justify-items: center; gap: 12px; }
 .watch-face { position: relative; display: grid; width: 210px; height: 210px; place-content: center; overflow: hidden; border: 9px solid #182c38; border-radius: 50%; color: #9cf1ff; background: radial-gradient(circle,#102b38,#02070c 67%); box-shadow: 0 20px 42px #000, inset 0 0 28px rgba(124,215,232,.15), 0 0 0 1px rgba(216,184,110,.34); cursor: grab; touch-action: none; user-select: none; }
@@ -293,11 +294,15 @@ dialog::backdrop { background: rgba(1,5,9,.84); backdrop-filter: blur(8px); }
 .piano-silhouette::before { position: absolute; right: 8%; bottom: 18%; left: 8%; height: 30%; border: 1px solid #2a5368; content: ""; background: repeating-linear-gradient(90deg,#cbdde0 0 9px,#17303d 9px 11px); opacity: .38; }
 .piano-silhouette i { position: absolute; right: auto; bottom: -48px; left: auto; width: 4px; height: 52px; background: #1b3745; box-shadow: none; }
 .piano-silhouette i:nth-child(1) { left: 16%; } .piano-silhouette i:nth-child(2) { right: 16%; }
-.uv-game [data-uv-target] { position: absolute; z-index: 4; left: var(--x); top: var(--y); width: 88px; min-height: 38px; border: 1px dashed rgba(124,215,232,.26); border-radius: 50%; color: transparent; background: rgba(124,215,232,.02); font: 700 .65rem var(--mono); transform: translate(-50%,-50%); transition: 150ms ease; }
+.uv-game [data-uv-target] { position: absolute; z-index: 4; left: var(--x); top: var(--y); width: 96px; min-height: 44px; border: 1px dashed rgba(124,215,232,.26); border-radius: 50%; color: transparent; background: rgba(124,215,232,.02); font: 700 .61rem var(--mono); transform: translate(-50%,-50%); transition: 150ms ease; }
 .uv-game [data-uv-target]:hover, .uv-game [data-uv-target]:focus-visible { color: #d8fbff; border-color: var(--cyan); background: rgba(124,215,232,.16); box-shadow: 0 0 30px rgba(124,215,232,.28); }
 .uv-game [data-uv-target].found { color: #0b161c; border-style: solid; border-color: var(--gold-bright); background: var(--gold-bright); box-shadow: 0 0 24px rgba(247,217,145,.5); }
+.uv-game [data-uv-target].rejected { color: #dfa1a9; border-color: rgba(219,101,114,.62); background: rgba(219,101,114,.09); opacity: .66; }
+.uv-game.wrong { animation: wrong-shake 280ms ease; }
 .uv-beam { position: absolute; z-index: 3; left: -68px; top: -68px; width: 136px; height: 136px; border-radius: 50%; pointer-events: none; background: radial-gradient(circle,rgba(157,105,255,.35),rgba(78,68,216,.12) 38%,transparent 70%); box-shadow: 0 0 44px rgba(127,96,255,.14); }
-.uv-game output { position: absolute; z-index: 5; right: 12px; bottom: 10px; }
+.uv-game output { position: absolute; z-index: 5; right: 8px; bottom: 7px; left: 8px; display: grid; gap: 2px; padding: 6px 8px; border-top: 1px solid rgba(124,215,232,.16); background: rgba(1,7,12,.86); letter-spacing: 0; }
+.uv-game output span { color: var(--gold-bright); font-weight: 800; }
+.uv-game output small { color: #9fb1b9; font: 500 .61rem/1.35 var(--ui); letter-spacing: 0; }
 .metronome-body { position: relative; width: 160px; height: 190px; clip-path: polygon(35% 0,65% 0,100% 100%,0 100%); background: linear-gradient(90deg,#362619,#80603d 45%,#2b1c12); box-shadow: 0 18px 34px #000; }
 .metronome-body::before { position: absolute; top: 22%; left: 50%; width: 4px; height: 100px; content: ""; background: #c7a465; transform: rotate(-9deg); transform-origin: bottom; }
 .metronome-body [data-fit-slot] { position: absolute; z-index: 3; top: 38%; left: 50%; display: grid; width: 88px; height: 48px; place-items: center; border: 2px dashed rgba(247,217,145,.54); border-radius: 50%; color: #e7d09d; background: rgba(0,0,0,.5); font: 700 .65rem var(--mono); transform: translateX(-50%); }
@@ -307,8 +312,8 @@ dialog::backdrop { background: rgba(1,5,9,.84); backdrop-filter: blur(8px); }
 .weight-pieces button { min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 4px; color: #d0dce0; background: rgba(255,255,255,.045); font: 700 .66rem var(--mono); }
 .weight-pieces button.selected { border-color: var(--gold); color: #101416; background: var(--gold-bright); transform: translateY(-3px); }
 .log-game { width: min(100%,410px); }
-.log-sequence { display: grid; width: 100%; min-height: 110px; gap: 5px; align-content: center; padding: 10px; border: 1px dashed rgba(124,215,232,.3); background: rgba(0,0,0,.32); }
-.log-sequence > span { color: #78919c; font: 700 .65rem var(--mono); text-align: center; }
+.log-sequence { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; min-height: 110px; gap: 5px; align-content: center; padding: 10px; border: 1px dashed rgba(124,215,232,.3); background: rgba(0,0,0,.32); }
+.log-sequence > span { grid-column: 1 / -1; color: #78919c; font: 700 .65rem var(--mono); text-align: center; }
 .log-sequence button { display: grid; grid-template-columns: 34px 1fr; align-items: center; min-height: 36px; color: #c7f3fa; background: rgba(124,215,232,.08); font: .65rem var(--mono); text-align: left; }
 .log-sequence small { color: var(--gold); text-align: center; }
 .log-fragments { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; gap: 6px; }
@@ -463,6 +468,7 @@ dialog::backdrop { background: rgba(1,5,9,.84); backdrop-filter: blur(8px); }
   .inspection-visual { min-height: 160px; border-right: 0; border-bottom: 1px solid var(--line); }
   .inspection-visual b { width: 90px; height: 90px; font-size: 2.1rem; }
   .inspection-visual.mini-game-active { min-height: 340px; }
+  .inspection-visual[data-kind="access"].mini-game-active { min-height: 455px; }
   .mini-game-host { padding: 12px; }
   .watch-face { width: 155px; height: 155px; border-width: 6px; }
   .watch-face span { font-size: 1.6rem; }
