@@ -11,6 +11,26 @@ const html = (await readFile(path.join(GAME_DIR, "index.html"), "utf8"))
   .replace(/<link[^>]+styles\.css[^>]*>/, "")
   .replace(/<script[^>]+game\.js[^>]*><\/script>/, "");
 const gameScript = await readFile(path.join(GAME_DIR, "game.js"), "utf8");
+const styles = await readFile(path.join(GAME_DIR, "styles.css"), "utf8");
+const bundledFonts = [
+  "barlow-condensed-latin-600-normal.woff2",
+  "barlow-condensed-vietnamese-600-normal.woff2",
+  "barlow-condensed-latin-800-normal.woff2",
+  "barlow-condensed-vietnamese-800-normal.woff2",
+  "be-vietnam-pro-latin-400-normal.woff2",
+  "be-vietnam-pro-vietnamese-400-normal.woff2",
+  "be-vietnam-pro-latin-700-normal.woff2",
+  "be-vietnam-pro-vietnamese-700-normal.woff2",
+];
+
+assert.match(styles, /--display: "Barlow Condensed"/, "Tiêu đề phải dùng font game condensed");
+assert.match(styles, /--ui: "Be Vietnam Pro"/, "Hội thoại phải dùng font Việt dễ đọc");
+assert.doesNotMatch(styles, /Georgia|Courier New/, "Không được quay lại bộ font template cũ");
+for (const fontFile of bundledFonts) {
+  const font = await readFile(path.join(GAME_DIR, "assets", "fonts", fontFile));
+  assert.equal(font.subarray(0, 4).toString("ascii"), "wOF2", `${fontFile} phải là WOFF2 hợp lệ`);
+  assert.match(styles, new RegExp(fontFile.replaceAll(".", "\\.")), `${fontFile} phải được CSS sử dụng`);
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
