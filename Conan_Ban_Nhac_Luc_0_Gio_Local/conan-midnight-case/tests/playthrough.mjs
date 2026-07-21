@@ -368,7 +368,12 @@ async function verifyContinue(serialized) {
   const { dom, document, browserErrors } = game;
   const continueButton = document.querySelector("#continue-button");
   assert.equal(continueButton.hidden, false, "Nút tiếp tục phải hiện khi có save");
+  document.querySelector("#app").scrollTop = 184;
+  continueButton.focus();
   continueButton.click();
+  await sleep(20);
+  assert.notEqual(document.activeElement, continueButton, "Nút ở màn tiêu đề không được giữ focus sau khi vào game");
+  assert.equal(document.querySelector("#app").scrollTop, 0, "HUD phải luôn bắt đầu ở mép trên màn hình");
   await waitFor(() => /HỒ SƠ HOÀN HẢO/.test(document.querySelector("#dialogue-text").textContent), "khôi phục ending S+", 3000);
   assert.equal(document.querySelector("#focus-label").textContent, "TẬP TRUNG 100");
   assert.deepEqual(browserErrors, [], `Không được có lỗi khi tải save: ${browserErrors.map(String).join("\n")}`);
