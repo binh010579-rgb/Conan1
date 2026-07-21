@@ -294,7 +294,7 @@ dialog::backdrop { background: rgba(1,5,9,.84); backdrop-filter: blur(8px); }
 .piano-silhouette::before { position: absolute; right: 8%; bottom: 18%; left: 8%; height: 30%; border: 1px solid #2a5368; content: ""; background: repeating-linear-gradient(90deg,#cbdde0 0 9px,#17303d 9px 11px); opacity: .38; }
 .piano-silhouette i { position: absolute; right: auto; bottom: -48px; left: auto; width: 4px; height: 52px; background: #1b3745; box-shadow: none; }
 .piano-silhouette i:nth-child(1) { left: 16%; } .piano-silhouette i:nth-child(2) { right: 16%; }
-.uv-game [data-uv-target] { position: absolute; z-index: 4; left: var(--x); top: var(--y); width: 96px; min-height: 44px; border: 1px dashed rgba(124,215,232,.26); border-radius: 50%; color: transparent; background: rgba(124,215,232,.02); font: 700 .61rem var(--mono); transform: translate(-50%,-50%); transition: 150ms ease; }
+.uv-game [data-uv-target] { position: absolute; z-index: 4; left: var(--x); top: var(--y); width: 96px; min-height: 44px; border: 1px dashed rgba(124,215,232,.34); border-radius: 50%; color: rgba(216,251,255,.62); background: rgba(124,215,232,.055); font: 700 .61rem var(--mono); text-shadow: 0 1px 5px #000; transform: translate(-50%,-50%); transition: 150ms ease; }
 .uv-game [data-uv-target]:hover, .uv-game [data-uv-target]:focus-visible { color: #d8fbff; border-color: var(--cyan); background: rgba(124,215,232,.16); box-shadow: 0 0 30px rgba(124,215,232,.28); }
 .uv-game [data-uv-target].found { color: #0b161c; border-style: solid; border-color: var(--gold-bright); background: var(--gold-bright); box-shadow: 0 0 24px rgba(247,217,145,.5); }
 .uv-game [data-uv-target].rejected { color: #dfa1a9; border-color: rgba(219,101,114,.62); background: rgba(219,101,114,.09); opacity: .66; }
