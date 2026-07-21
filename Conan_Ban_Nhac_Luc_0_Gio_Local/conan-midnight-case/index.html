@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#06111b" />
-    <meta name="description" content="Fan game trinh thám 2D có voice và điều tra tương tác: Bản Nhạc Lúc 0 Giờ." />
-    <title>Conan — Bản Nhạc Lúc 0 Giờ</title>
+    <meta name="description" content="Game trinh thám 2D nguyên bản có hội thoại và điều tra tương tác: Hồ Sơ 0 Giờ — Bản Nhạc Lúc 0 Giờ." />
+    <title>Hồ Sơ 0 Giờ — Bản Nhạc Lúc 0 Giờ</title>
     <link rel="icon" href="./favicon.svg" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -16,14 +16,18 @@
       <section id="title-screen" class="screen title-screen active" aria-labelledby="game-title">
         <div class="title-clock" aria-hidden="true">00:00</div>
         <div class="title-copy">
-          <p class="eyebrow">HỒ SƠ FAN-MADE • CHƯƠNG 1</p>
-          <h1 id="game-title"><span>CONAN</span>Bản Nhạc Lúc 0 Giờ</h1>
-          <p class="title-lead">Một bản nhạc vang lên từ căn phòng khóa kín. Nhưng người chơi đàn đã chết từ trước đó.</p>
+          <p class="eyebrow">VỤ ÁN TƯƠNG TÁC • CHƯƠNG 1</p>
+          <h1 id="game-title"><span>HỒ SƠ 0 GIỜ</span>Bản Nhạc Lúc 0 Giờ</h1>
+          <p class="title-lead">Một bản nhạc vang lên từ căn phòng khóa kín. Khi cánh cửa mở, người chơi đàn đã chết.</p>
+          <div class="case-teaser" aria-label="Các cơ chế chính">
+            <span>GHIM LỜI KHAI</span><span>GIẢI MÃ VẬT CHỨNG</span><span>TỰ DỰNG CÁO BUỘC</span>
+          </div>
+          <p class="case-risk">Không có đường tắt: suy luận sai sẽ làm giảm điểm hồ sơ.</p>
           <div class="title-actions">
             <button id="new-game-button" class="button primary" type="button">Bắt đầu vụ án</button>
             <button id="continue-button" class="button ghost" type="button" hidden>Tiếp tục điều tra</button>
           </div>
-          <p class="fan-note">Fan game phi thương mại. Toàn bộ hình ảnh noir và nhạc nền trong bản thử nghiệm này là nội dung nguyên gốc.</p>
+          <p class="fan-note">Truyện, hình ảnh noir và nhạc nền trong trò chơi này là nội dung nguyên bản.</p>
         </div>
       </section>
 
@@ -36,6 +40,7 @@
           <div class="case-status">
             <span id="objective-label" class="objective-label">Đọc mở đầu vụ án</span>
             <span id="phase-label">Mở đầu</span>
+            <span id="focus-label" class="focus-label" aria-live="polite">TẬP TRUNG 100</span>
             <button id="text-size-button" class="icon-button text-size-button" type="button" aria-label="Đổi cỡ chữ, hiện tại: lớn">CHỮ: LỚN</button>
             <button id="sound-button" class="icon-button" type="button" aria-label="Bật hoặc tắt nhạc, hiệu ứng và giọng đọc">ÂM: BẬT</button>
             <button id="notebook-button" class="icon-button notebook-button" type="button" aria-label="Mở sổ điều tra">SỔ <b id="record-count">0</b></button>
@@ -57,10 +62,10 @@
 
         <section id="dialogue-panel" class="dialogue-panel" aria-label="Hội thoại có phụ đề và giọng đọc" tabindex="0">
           <span class="dialogue-kicker">HỘI THOẠI</span>
-          <div id="portrait" class="portrait conan" aria-hidden="true"></div>
+          <div id="portrait" class="portrait ren" aria-hidden="true"></div>
           <div class="dialogue-copy">
             <div class="speaker-line">
-              <strong id="speaker-name">Edogawa Conan</strong><span id="speaker-role">Thám tử</span>
+              <strong id="speaker-name">Kanzaki Ren</strong><span id="speaker-role">Thám tử trẻ</span>
               <button id="replay-voice" class="replay-voice" type="button" aria-label="Nghe lại câu hiện tại" hidden>↻ NGHE LẠI</button>
             </div>
             <div id="interrogation-tools" class="interrogation-tools" hidden>
@@ -78,7 +83,7 @@
       <dialog id="notebook" class="full-dialog notebook">
         <form method="dialog" class="notebook-card">
           <header>
-            <div><span>SỔ TAY CỦA CONAN</span><h2>Hồ sơ điều tra</h2></div>
+            <div><span>SỔ TAY ĐIỀU TRA</span><h2>Hồ sơ vụ án</h2></div>
             <button class="close-button" value="close" aria-label="Đóng sổ">×</button>
           </header>
           <div class="notebook-tabs" role="tablist">

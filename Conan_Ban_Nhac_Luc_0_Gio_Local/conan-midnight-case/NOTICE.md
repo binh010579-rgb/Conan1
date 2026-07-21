@@ -1,9 +1,9 @@
-# Fan Project Notice
+# Original Work Notice
 
-This is an unofficial, non-commercial fan project created for private experimentation.
+Hồ Sơ 0 Giờ — Bản Nhạc Lúc 0 Giờ là một trò chơi trinh thám nguyên bản.
 
-Detective Conan / Case Closed and its established characters are the property of their respective copyright and trademark owners. This repository is not endorsed by or affiliated with Gosho Aoyama, Shogakukan, TMS Entertainment, or any related rights holder.
+Cốt truyện, nhân vật, mã nguồn, hình ảnh anime-noir và nhạc nền được tạo riêng cho dự án này. Trò chơi không liên kết với hoặc dựa trên một thương hiệu trinh thám có sẵn.
 
-The case plot, original suspects, interface code, and anime-noir visual assets in this repository were created specifically for this prototype. No official artwork, episode footage, music, voice recording, or ripped game asset is included. Vietnamese fallback speech is synthesized at runtime through the MIT-licensed `node-edge-tts` package and is not sourced from the anime.
+Copyright © 2026. All rights reserved.
 
-Keep the repository private unless you have reviewed the rights and distribution implications for your intended use. Do not monetize or present the project as official.
+Không được sao chép, bán lại hoặc phân phối lại mã nguồn và tài nguyên của trò chơi nếu chưa có sự cho phép của chủ sở hữu.
