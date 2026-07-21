@@ -1,3 +1,72 @@
+/*
+ * Typography is self-hosted so the game keeps its intended art direction
+ * inside an itch.io iframe and when played offline.
+ */
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("./assets/fonts/barlow-condensed-vietnamese-600-normal.woff2") format("woff2");
+  unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;
+}
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url("./assets/fonts/barlow-condensed-latin-600-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 800;
+  src: url("./assets/fonts/barlow-condensed-vietnamese-800-normal.woff2") format("woff2");
+  unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;
+}
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 800;
+  src: url("./assets/fonts/barlow-condensed-latin-800-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("./assets/fonts/be-vietnam-pro-vietnamese-400-normal.woff2") format("woff2");
+  unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("./assets/fonts/be-vietnam-pro-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("./assets/fonts/be-vietnam-pro-vietnamese-700-normal.woff2") format("woff2");
+  unicode-range: U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;
+}
+@font-face {
+  font-family: "Be Vietnam Pro";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("./assets/fonts/be-vietnam-pro-latin-700-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+
 :root {
   color-scheme: dark;
   --night: #03080e;
@@ -12,9 +81,9 @@
   --paper: #ece9e1;
   --muted: #91a3ad;
   --line: rgba(137, 196, 211, .24);
-  --display: Georgia, Cambria, "Times New Roman", serif;
-  --ui: "Segoe UI", Tahoma, Arial, sans-serif;
-  --mono: "Courier New", monospace;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --ui: "Be Vietnam Pro", "Segoe UI", Arial, sans-serif;
+  --mono: "Barlow Condensed", "Arial Narrow", sans-serif;
   font-family: var(--ui);
   font-synthesis: none;
 }
@@ -24,7 +93,7 @@ html { font-size: 16px; }
 html[data-text-size="large"] { font-size: 18px; }
 html[data-text-size="xlarge"] { font-size: 20px; }
 html, body { width: 100%; min-width: 320px; min-height: 100%; margin: 0; overflow: hidden; background: #010409; }
-body { min-height: 100dvh; color: var(--paper); }
+body { min-height: 100dvh; color: var(--paper); font-kerning: normal; text-rendering: optimizeLegibility; }
 [hidden] { display: none !important; }
 button, input { color: inherit; font: inherit; }
 button { border: 0; cursor: pointer; }
@@ -43,16 +112,20 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline: 2
 /* Title */
 .title-screen { place-items: center start; padding: clamp(24px,6vw,92px); background: linear-gradient(90deg, rgba(2,7,12,.96) 0%, rgba(2,7,12,.72) 45%, rgba(2,7,12,.08) 78%), linear-gradient(0deg, rgba(1,4,8,.72), transparent 56%), url("./assets/studio-noir.webp") center / cover no-repeat; }
 .title-clock { position: absolute; right: 5vw; top: 8vh; color: rgba(200,231,242,.17); font: clamp(3rem,8vw,8rem) var(--mono); letter-spacing: .08em; text-shadow: 0 0 30px rgba(73,186,229,.22); }
-.title-copy { position: relative; z-index: 4; width: min(680px,54vw); padding: clamp(28px,4vw,56px); border-left: 1px solid rgba(216,184,110,.48); background: linear-gradient(90deg, rgba(5,12,18,.66), transparent); }
-.eyebrow, .case-label { margin: 0; color: var(--gold); font: 800 .69rem var(--mono); letter-spacing: .2em; }
-.title-copy h1 { margin: 18px 0 0; font: 500 clamp(3.3rem,7vw,7rem)/.88 var(--display); letter-spacing: -.055em; text-wrap: balance; text-shadow: 0 8px 36px rgba(0,0,0,.82); }
-.title-copy h1 span { display: block; margin-bottom: 18px; color: var(--cyan); font: 900 .2em var(--ui); letter-spacing: .56em; }
-.title-lead { max-width: 540px; margin: 30px 0; color: #d4dadd; font: clamp(1rem,1.3vw,1.2rem)/1.72 var(--display); text-shadow: 0 3px 18px #000; }
+.title-copy { position: relative; z-index: 4; width: min(640px,57vw); padding: clamp(28px,4vw,54px); border-left: 1px solid rgba(216,184,110,.48); background: linear-gradient(90deg, rgba(5,12,18,.72), transparent); }
+.eyebrow, .case-label { margin: 0; color: var(--gold); font: 600 .78rem/1 var(--display); letter-spacing: .14em; text-transform: uppercase; }
+.title-copy h1 { margin: 22px 0 0; color: #f2efe8; font: 800 clamp(3.5rem,6.6vw,6.25rem)/.84 var(--display); letter-spacing: .012em; text-transform: uppercase; text-shadow: 0 8px 36px rgba(0,0,0,.82); }
+.title-copy h1 span { display: block; }
+.title-copy h1 .title-series { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; color: var(--cyan); font: 600 .22em/1 var(--display); letter-spacing: .18em; }
+.title-copy h1 .title-series::after { width: min(180px,26vw); height: 1px; content: ""; background: linear-gradient(90deg,rgba(124,215,232,.72),transparent); }
+.title-copy h1 .title-name { white-space: nowrap; }
+.title-copy h1 .title-name-accent { color: #d8c18a; }
+.title-lead { max-width: 520px; margin: 28px 0; color: #d4dadd; font: 400 clamp(.95rem,1.15vw,1.08rem)/1.7 var(--ui); text-shadow: 0 3px 18px #000; }
 .case-teaser { display: flex; flex-wrap: wrap; gap: 8px; margin: -10px 0 12px; }
-.case-teaser span { padding: 7px 10px; border: 1px solid rgba(124,215,232,.28); border-radius: 999px; color: #bde9f0; background: rgba(124,215,232,.07); font: 800 .62rem var(--mono); letter-spacing: .05em; }
+.case-teaser span { padding: 7px 11px; border: 1px solid rgba(124,215,232,.28); border-radius: 999px; color: #bde9f0; background: rgba(124,215,232,.07); font: 600 .72rem/1 var(--display); letter-spacing: .055em; }
 .case-risk { margin: 0 0 20px; color: #dca0a7; font-size: .77rem; line-height: 1.45; }
 .title-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.button { min-height: 50px; padding: 0 22px; border: 1px solid rgba(216,184,110,.46); border-radius: 4px; font-size: .78rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; transition: 160ms ease; }
+.button { min-height: 50px; padding: 0 23px; border: 1px solid rgba(216,184,110,.46); border-radius: 4px; font: 800 .9rem/1 var(--display); letter-spacing: .045em; text-transform: uppercase; transition: 160ms ease; }
 .button:hover:not(:disabled) { transform: translateY(-2px); }
 .button.primary { color: #0b1116; background: linear-gradient(135deg,#f1d793,#c69e4d); box-shadow: 0 14px 38px rgba(223,185,96,.18); }
 .button.ghost { background: rgba(5,14,22,.72); }
@@ -65,7 +138,7 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline: 2
 .case-identity { display: flex; min-width: 0; align-items: center; gap: 12px; }
 .case-identity > div { display: grid; gap: 2px; min-width: 0; }
 .case-emblem { display: grid; width: 40px; height: 40px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(216,184,110,.46); border-radius: 50%; color: var(--gold); }
-.case-header strong { overflow: hidden; font: 700 1rem var(--ui); text-overflow: ellipsis; white-space: nowrap; }
+.case-header strong { overflow: hidden; font: 600 1.14rem/1 var(--display); letter-spacing: .025em; text-overflow: ellipsis; white-space: nowrap; }
 .case-status { display: flex; min-width: 0; align-items: center; gap: 8px; }
 .objective-label { max-width: min(34vw,460px); overflow: hidden; padding: 9px 13px; border: 1px solid rgba(216,184,110,.34); border-radius: 3px; color: #f0daa6; background: rgba(216,184,110,.09); font-size: .76rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
 #phase-label { color: #a7b7bf; font: .68rem var(--mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
@@ -120,12 +193,12 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline: 2
 @keyframes pressure-hit { 35% { transform: translateX(-5px) rotate(-.5deg); filter: saturate(.7) contrast(1.16) drop-shadow(0 0 24px rgba(219,101,114,.42)); } }
 .dialogue-copy { min-width: 0; padding: 30px 24px 24px 14px; }
 .speaker-line { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
-.dialogue-copy strong { color: var(--gold-bright); font: 750 1.15rem var(--ui); }
+.dialogue-copy strong { color: var(--gold-bright); font: 600 1.32rem/1 var(--display); letter-spacing: .025em; }
 #speaker-role { color: #a0b2bb; font: .68rem var(--ui); font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
 .replay-voice { min-height: 34px; margin-left: auto; padding: 0 11px; border: 1px solid rgba(124,215,232,.3); border-radius: 4px; color: #ccebf0; background: rgba(124,215,232,.06); font: 800 .66rem var(--ui); letter-spacing: .04em; }
 .replay-voice:hover { border-color: var(--cyan); color: #071117; background: var(--cyan); }
 .replay-voice:disabled { cursor: not-allowed; opacity: .42; }
-.dialogue-copy p { max-width: 1040px; min-height: 68px; margin: 0; color: #f3f1eb; font: 500 clamp(1.05rem,1.15vw,1.28rem)/1.58 var(--ui); text-wrap: pretty; }
+.dialogue-copy p { max-width: 1040px; min-height: 68px; margin: 0; color: #f3f1eb; font: 400 clamp(1rem,1.08vw,1.2rem)/1.65 var(--ui); letter-spacing: -.008em; text-wrap: pretty; }
 .dialogue-hint { position: absolute; right: 20px; top: 15px; color: #91a5ae; font: .66rem var(--ui); }
 .next-button { align-self: end; min-width: 142px; height: 48px; margin: 0 20px 20px 0; border: 1px solid rgba(216,184,110,.62); border-radius: 4px; color: #101417; background: linear-gradient(135deg,#f4dc9f,#c9a14f); font-size: .76rem; font-weight: 900; letter-spacing: .07em; }
 .choice-list { display: flex; flex-wrap: wrap; gap: 9px; max-height: 112px; margin-top: 17px; overflow: auto; }
@@ -151,7 +224,7 @@ dialog::backdrop { background: rgba(1,5,9,.84); backdrop-filter: blur(8px); }
 .notebook-card { overflow: hidden; }
 .notebook-card > header, .inspection-card > header, .link-card > header, .audio-card > header, .timeline-card > header, .reconstruction-card > header { display: flex; min-height: 76px; align-items: center; justify-content: space-between; gap: 18px; padding: 15px 21px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.018); }
 .full-dialog header span { display: block; color: var(--cyan); font: 800 .7rem var(--ui); letter-spacing: .1em; }
-.full-dialog h2 { margin: 5px 0 0; color: #f0e9da; font: 500 1.5rem var(--display); }
+.full-dialog h2 { margin: 5px 0 0; color: #f0e9da; font: 600 1.75rem/1 var(--display); letter-spacing: .02em; }
 .close-button { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: #a9bbc5; background: transparent; font-size: 1.2rem; }
 .close-button:hover { border-color: var(--cyan); color: var(--paper); }
 

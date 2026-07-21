@@ -7,3 +7,5 @@ Cốt truyện, nhân vật, mã nguồn, hình ảnh anime-noir và nhạc nề
 Copyright © 2026. All rights reserved.
 
 Không được sao chép, bán lại hoặc phân phối lại mã nguồn và tài nguyên của trò chơi nếu chưa có sự cho phép của chủ sở hữu.
+
+Ngoại lệ: hai bộ chữ Barlow Condensed và Be Vietnam Pro được đóng gói cùng trò chơi theo SIL Open Font License 1.1. Xem `assets/fonts/OFL.txt`.
