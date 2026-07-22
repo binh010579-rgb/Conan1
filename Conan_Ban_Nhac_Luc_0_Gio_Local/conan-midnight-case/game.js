@@ -2,6 +2,7 @@
   "use strict";
 
   const SAVE_KEY = "zero-hour-case-save-v2";
+  const SAVE_VERSION = 3;
   const TEXT_SIZE_KEY = "zero-hour-case-text-size";
   const TEXT_SIZES = [
     { id: "medium", label: "VỪA" },
@@ -63,12 +64,19 @@
       ],
     },
   };
+  const TIMELINE_SLOTS = [
+    { id: "slot-2255", time: "22:55", correct: "seal" },
+    { id: "slot-2312", time: "23:12", correct: "card" },
+    { id: "slot-2318", time: "23:18", correct: "death" },
+    { id: "slot-2325", time: "23:25", correct: "yuto" },
+    { id: "slot-2350", time: "23:50", correct: "midi" },
+  ];
   const TIMELINE_EVENTS = [
-    { id: "seal", time: "22:55", text: "Hộp dụng cụ của Yuto được niêm phong; thẻ S-04 gốc nằm bên trong." },
-    { id: "card", time: "23:12", text: "Một bản sao thẻ S-04 mở cửa Phòng thu A." },
-    { id: "death", time: "23:18", text: "Nhịp tim của Daigo dừng lại trong Phòng thu A." },
-    { id: "yuto", time: "23:25", text: "Haru thấy Yuto rời phòng điều khiển với hộp dụng cụ." },
-    { id: "midi", time: "23:50", text: "Tệp MIDI bắt đầu điều khiển cây đàn tự động." },
+    { id: "seal", text: "Hộp dụng cụ của Yuto được niêm phong; thẻ S-04 gốc nằm bên trong." },
+    { id: "card", text: "Một bản sao thẻ S-04 mở cửa Phòng thu A." },
+    { id: "death", text: "Nhịp tim của Daigo dừng lại trong Phòng thu A." },
+    { id: "yuto", text: "Haru thấy Yuto rời phòng điều khiển với hộp dụng cụ." },
+    { id: "midi", text: "Tệp MIDI bắt đầu điều khiển cây đàn tự động." },
   ];
   const TIMELINE_DECK_ORDER = ["midi", "death", "seal", "yuto", "card"];
 
@@ -89,9 +97,10 @@
     miniGameHost: $("#mini-game-host"),
     inspectionPrompt: $("#inspection-prompt"), inspectionActions: $("#inspection-actions"), inspectionNotes: $("#inspection-notes"),
     inspectionClose: $("#inspection-close"), recordEvidence: $("#record-evidence"), linkBoard: $("#link-board"),
-    linkClose: $("#link-close"), statementDeck: $("#statement-deck"), evidenceDeck: $("#evidence-deck"),
+    linkClose: $("#link-close"), linkWorkspace: $("#link-workspace"), linkLines: $("#link-lines"), statementDeck: $("#statement-deck"), evidenceDeck: $("#evidence-deck"),
     linkFeedback: $("#link-feedback"), testLink: $("#test-link"), audioLab: $("#audio-lab"), audioClose: $("#audio-close"),
-    audioAlign: $("#audio-align"), audioOffset: $("#audio-offset"), audioResult: $("#audio-result"), lockAudio: $("#lock-audio"),
+    audioAlign: $("#audio-align"), audioOffset: $("#audio-offset"), audioResult: $("#audio-result"), audioMode: $("#audio-mode"),
+    audioPlayhead: $("#audio-playhead"), lockAudio: $("#lock-audio"),
     sceneWave: $("#scene-wave"), reconstruction: $("#reconstruction"), finalSlots: $("#final-slots"),
     timelineLab: $("#timeline-lab"), timelineClose: $("#timeline-close"), timelineSlots: $("#timeline-slots"),
     timelineDeck: $("#timeline-deck"), timelineFeedback: $("#timeline-feedback"), checkTimeline: $("#check-timeline"),
@@ -114,11 +123,11 @@
   };
 
   const prologue = [
-    { who: "narrator", text: "Nhà hát Tsukikage, 0 giờ 07 phút. Mưa lớn đã giữ tất cả những người có mặt lại bên trong." },
-    { who: "sagara", text: "Nhạc sĩ Kisaragi Daigo được tìm thấy tử vong trong Phòng thu A. Cửa đã khóa, nhưng từ 23:50 đến đúng 0 giờ mọi người đều nghe ông ấy chơi đàn." },
-    { who: "genda", text: "Vậy nạn nhân còn sống lúc 23:50. Hung thủ chỉ có thể ra tay sau khi bản nhạc kết thúc!" },
-    { who: "ren", text: "Nếu tiếng đàn không dùng để chứng minh ông ấy còn sống, mà dùng để khiến mọi người tin như vậy thì sao?" },
-    { who: "narrator", text: "Bạn sẽ không được chọn sẵn đáp án trong lúc lấy lời khai. Hãy nghe, lưu từng câu vào sổ rồi tự tìm vật chứng trong cảnh thật." },
+    { who: "narrator", mood: "neutral", text: "Nhà hát Tsukikage, 0 giờ 07 phút. Mưa lớn đã giữ tất cả những người có mặt lại bên trong." },
+    { who: "sagara", mood: "neutral", text: "Nhạc sĩ Kisaragi Daigo được tìm thấy tử vong trong Phòng thu A. Cửa đã khóa, nhưng từ 23:50 đến đúng 0 giờ mọi người đều nghe ông ấy chơi đàn." },
+    { who: "genda", mood: "angry", text: "Vậy nạn nhân còn sống lúc 23:50. Hung thủ chỉ có thể ra tay sau khi bản nhạc kết thúc!" },
+    { who: "ren", mood: "thinking", text: "Nếu tiếng đàn không dùng để chứng minh ông ấy còn sống, mà dùng để khiến mọi người tin như vậy thì sao?" },
+    { who: "narrator", mood: "neutral", text: "Bạn sẽ không được chọn sẵn đáp án trong lúc lấy lời khai. Hãy nghe, lưu từng câu vào sổ rồi tự tìm vật chứng trong cảnh thật." },
   ];
 
   const suspects = {
@@ -126,9 +135,9 @@
       name: "Aoyama Rina", role: "Nghệ sĩ piano trẻ", icon: "R",
       intro: "Bị nạn nhân gạt tên khỏi phần đồng sáng tác. Có động cơ rõ ràng nhưng đang biểu diễn ở sân khấu phụ lúc 23:18.",
       lines: [
-        { who: "rina", text: "Tôi căm ông Daigo vì đã xóa tên tôi khỏi bản nhạc, nhưng lúc 23:18 tôi đang ở sân khấu phụ trước hàng trăm khán giả." },
-        { who: "ren", text: "Cô nghe thấy điều gì khác thường trong bản nhạc vang lên lúc 23:50?" },
-        { who: "rina", text: "Nó hoàn hảo đến vô hồn. Ông ấy luôn ngừng nửa nhịp trước hợp âm cuối; đêm nay khoảng nghỉ ấy biến mất.", pin: "rina-rhythm" },
+        { who: "rina", mood: "angry", text: "Tôi căm ông Daigo vì đã xóa tên tôi khỏi bản nhạc, nhưng lúc 23:18 tôi đang ở sân khấu phụ trước hàng trăm khán giả." },
+        { who: "ren", mood: "thinking", text: "Cô nghe thấy điều gì khác thường trong bản nhạc vang lên lúc 23:50?" },
+        { who: "rina", mood: "thinking", text: "Nó hoàn hảo đến vô hồn. Ông ấy luôn ngừng nửa nhịp trước hợp âm cuối; đêm nay khoảng nghỉ ấy biến mất.", pin: "rina-rhythm" },
       ],
       records: ["rina-rhythm"],
       requiredPins: ["rina-rhythm"],
@@ -137,9 +146,9 @@
       name: "Kisaragi Misaki", role: "Quản lý kiêm em gái nạn nhân", icon: "M",
       intro: "Quản lý mọi quyền truy cập của nhà hát và là người cuối cùng xác nhận đã mang cà phê vào phòng thu.",
       lines: [
-        { who: "misaki", text: "Tôi mang cà phê vào lúc 23:08 rồi rời đi ngay. Anh tôi còn sống và đang tranh cãi về tiền bản quyền." },
-        { who: "ren", text: "Khi ra hành lang, cô nhìn thấy ai?" },
-        { who: "misaki", text: "Yuto cầm thẻ S-04 đứng gần cửa. Chắc anh ta đến sửa tệp hẹn giờ chạy lúc 23:50... Tôi chỉ đoán vậy thôi.", pin: "misaki-slip" },
+        { who: "misaki", mood: "neutral", text: "Tôi mang cà phê vào lúc 23:08 rồi rời đi ngay. Anh tôi còn sống và đang tranh cãi về tiền bản quyền." },
+        { who: "ren", mood: "thinking", text: "Khi ra hành lang, cô nhìn thấy ai?" },
+        { who: "misaki", mood: "stressed", text: "Yuto cầm thẻ S-04 đứng gần cửa. Chắc anh ta đến sửa tệp hẹn giờ chạy lúc 23:50... Tôi chỉ đoán vậy thôi.", pin: "misaki-slip" },
       ],
       records: ["misaki-last", "misaki-slip"],
       requiredPins: ["misaki-slip"],
@@ -148,9 +157,9 @@
       name: "Nishino Haru", role: "Phóng viên âm nhạc", icon: "H",
       intro: "Đang điều tra bê bối đạo nhạc của nạn nhân. Cái chết khiến bài báo của anh mất nguồn tin quan trọng nhất.",
       lines: [
-        { who: "haru", text: "Tôi ra bãi xe gọi cho tòa soạn. Lúc trở lại khoảng 23:25, áo và ô đều ướt sũng." },
-        { who: "ren", text: "Anh có gặp ai trên đường trở lại không?" },
-        { who: "haru", text: "Yuto bước khỏi phòng điều khiển, ôm một hộp dụng cụ kim loại. Trông anh ta rất hoảng.", pin: "haru-control" },
+        { who: "haru", mood: "neutral", text: "Tôi ra bãi xe gọi cho tòa soạn. Lúc trở lại khoảng 23:25, áo và ô đều ướt sũng." },
+        { who: "ren", mood: "thinking", text: "Anh có gặp ai trên đường trở lại không?" },
+        { who: "haru", mood: "thinking", text: "Yuto bước khỏi phòng điều khiển, ôm một hộp dụng cụ kim loại. Trông anh ta rất hoảng.", pin: "haru-control" },
       ],
       records: ["haru-control"],
       requiredPins: ["haru-control"],
@@ -159,9 +168,9 @@
       name: "Senda Yuto", role: "Kỹ thuật viên âm thanh", icon: "Y",
       intro: "Hiểu hệ thống đàn tự động hơn bất kỳ ai. Em gái quá cố của anh từng sáng tác một bản nhạc cùng tên.",
       lines: [
-        { who: "yuto", text: "Tôi không vào Phòng thu A sau 22:40. Thẻ S-04 luôn ở trong hộp dụng cụ của tôi.", pin: "yuto-room" },
-        { who: "ren", text: "Còn hệ thống âm thanh sau 23:30?" },
-        { who: "yuto", text: "Đã tắt hoàn toàn. Tôi không chạm vào bàn điều khiển và cũng không biết ai đã phát bản nhạc.", pin: "yuto-system" },
+        { who: "yuto", mood: "stressed", text: "Tôi không vào Phòng thu A sau 22:40. Thẻ S-04 luôn ở trong hộp dụng cụ của tôi.", pin: "yuto-room" },
+        { who: "ren", mood: "thinking", text: "Còn hệ thống âm thanh sau 23:30?" },
+        { who: "yuto", mood: "stressed", text: "Đã tắt hoàn toàn. Tôi không chạm vào bàn điều khiển và cũng không biết ai đã phát bản nhạc.", pin: "yuto-system" },
       ],
       records: ["yuto-room", "yuto-system"],
       requiredPins: ["yuto-room", "yuto-system"],
@@ -299,17 +308,17 @@
   ];
 
   const reveal = [
-    { who: "ren", text: "Daigo đã chết lúc 23:18. Tiếng đàn sau đó chỉ là tệp MIDI được hẹn giờ, nên mọi lời khai dựa trên mốc 23:50 đều sai." },
-    { who: "ren", text: "Cửa tự khóa khi khép lại. Hung thủ rời đi từ trước rồi dùng bản nhạc để biến một căn phòng bình thường thành phòng kín trong trí tưởng tượng của mọi người." },
-    { who: "sagara", text: "Nhưng bộ nhớ đầu đọc ghi thẻ S-04 của Yuto lúc 23:12." },
-    { who: "ren", text: "Đó là bản sao. S-04 gốc nằm trong hộp niêm phong từ 22:55. Yuto nói dối vì anh lén sao chép kho nhạc của em gái, không phải vì đã giết Daigo." },
-    { who: "yuto", text: "Tôi chỉ muốn giữ lại bản gốc của Hana trước khi ông ấy xóa sạch. Tôi sợ cảnh sát coi đó là hành vi phá hoại dữ liệu." },
-    { who: "ren", text: "Lệnh MIDI ban đầu được ký bằng mã quản lý M-01. Và trước khi lịch tác vụ được khôi phục, chỉ một người đã vô tình nói đúng cả việc có tệp hẹn giờ lẫn mốc 23:50." },
-    { who: "ren", text: "Sợi vải kem trên máy đếm nhịp cũng trùng với áo khoác quản lý. Hung thủ là cô, Kisaragi Misaki." },
-    { who: "misaki", text: "Tôi đã nhân bản S-04 để cuộc gặp lúc 23:12 không bị ghi dưới tên mình. Anh ấy định đổ toàn bộ tiền bản quyền bẩn lên tôi rồi hủy bản thảo của Hana. Tôi chỉ muốn ép anh ấy thú nhận... nhưng anh ấy cười vào mặt tôi." },
-    { who: "misaki", text: "Tôi vung quả nặng trong lúc giằng co. Sau đó tôi dùng M-01 đặt lịch bản nhạc, đổi nhãn lệnh thành S-04 và hy vọng mọi người sẽ chỉ nhìn về phía Yuto." },
-    { who: "aoi", text: "Cô đã bảo vệ một sự thật bằng quá nhiều lời nói dối. Cuối cùng, chính những lời nói dối đó đưa mọi người trở lại sự thật." },
-    { who: "ren", text: "Một vụ án không được giải bằng việc đoán đúng một cái tên. Nó được giải khi mọi mắt xích đều không còn cách giải thích nào khác." },
+    { who: "ren", mood: "thinking", text: "Daigo đã chết lúc 23:18. Tiếng đàn sau đó chỉ là tệp MIDI được hẹn giờ, nên mọi lời khai dựa trên mốc 23:50 đều sai." },
+    { who: "ren", mood: "neutral", text: "Cửa tự khóa khi khép lại. Hung thủ rời đi từ trước rồi dùng bản nhạc để biến một căn phòng bình thường thành phòng kín trong trí tưởng tượng của mọi người." },
+    { who: "sagara", mood: "shocked", text: "Nhưng bộ nhớ đầu đọc ghi thẻ S-04 của Yuto lúc 23:12." },
+    { who: "ren", mood: "thinking", text: "Đó là bản sao. S-04 gốc nằm trong hộp niêm phong từ 22:55. Yuto nói dối vì anh lén sao chép kho nhạc của em gái, không phải vì đã giết Daigo." },
+    { who: "yuto", mood: "stressed", text: "Tôi chỉ muốn giữ lại bản gốc của Hana trước khi ông ấy xóa sạch. Tôi sợ cảnh sát coi đó là hành vi phá hoại dữ liệu." },
+    { who: "ren", mood: "thinking", text: "Lệnh MIDI ban đầu được ký bằng mã quản lý M-01. Và trước khi lịch tác vụ được khôi phục, chỉ một người đã vô tình nói đúng cả việc có tệp hẹn giờ lẫn mốc 23:50." },
+    { who: "ren", mood: "angry", text: "Sợi vải kem trên máy đếm nhịp cũng trùng với áo khoác quản lý. Hung thủ là cô, Kisaragi Misaki." },
+    { who: "misaki", mood: "shocked", text: "Tôi đã nhân bản S-04 để cuộc gặp lúc 23:12 không bị ghi dưới tên mình. Anh ấy định đổ toàn bộ tiền bản quyền bẩn lên tôi rồi hủy bản thảo của Hana. Tôi chỉ muốn ép anh ấy thú nhận... nhưng anh ấy cười vào mặt tôi." },
+    { who: "misaki", mood: "angry", text: "Tôi vung quả nặng trong lúc giằng co. Sau đó tôi dùng M-01 đặt lịch bản nhạc, đổi nhãn lệnh thành S-04 và hy vọng mọi người sẽ chỉ nhìn về phía Yuto." },
+    { who: "aoi", mood: "thinking", text: "Cô đã bảo vệ một sự thật bằng quá nhiều lời nói dối. Cuối cùng, chính những lời nói dối đó đưa mọi người trở lại sự thật." },
+    { who: "ren", mood: "neutral", text: "Một vụ án không được giải bằng việc đoán đúng một cái tên. Nó được giải khi mọi mắt xích đều không còn cách giải thích nào khác." },
   ];
 
   const locations = {
@@ -318,8 +327,9 @@
 
   const state = {
     phase: "title", location: "hall", interviews: new Set(), statementCards: new Set(["crowd-time"]),
-    pinnedStatements: new Set(), suspectPressure: {}, evidence: new Set(), inspections: {}, miniGames: new Set(),
-    links: new Set(), deductions: new Set(), deductionFailures: {}, miniProgress: {}, audioSolved: false, timelineSlots: {}, timelineSolved: false, mistakes: 0,
+    pinnedStatements: new Set(), pinnedAt: {}, suspectPressure: {}, evidence: new Set(), inspections: {}, miniGames: new Set(),
+    links: new Set(), invalidLinks: new Set(), deductions: new Set(), deductionFailures: {}, miniProgress: {}, audioSolved: false,
+    timelineSlots: {}, timelineSolved: false, mistakes: 0, focus: 100, penaltyLog: [],
     final: {}, sound: true, rank: null,
   };
 
@@ -328,39 +338,65 @@
   let pendingEvidence = null, selectedStatement = null, selectedEvidence = null, selectedFinalCard = null;
   let currentInterviewId = null, currentDialogueLine = null, currentPinAttempted = false, selectedTimelineEvent = null, currentVoiceLine = null;
   let voiceSequence = 0, vietnameseVoices = [], voiceWaitTimer = 0, pendingVoiceRequest = null, voiceUnavailableNotified = false;
-  let audioContext = null, masterGain = null, scoreTimer = 0, scoreStep = 0;
+  let dialogueInputGate = 0, linkPointer = null, linkLineFrame = 0;
+  let audioContext = null, masterGain = null, scoreTimer = 0, scoreStep = 0, audioComparison = null;
+  let rainSource = null, rainGain = null;
 
   function serialize() {
     const inspectionData = {};
     Object.entries(state.inspections).forEach(([id, values]) => { inspectionData[id] = [...values]; });
     return {
       ...state,
+      saveVersion: SAVE_VERSION,
       interviews: [...state.interviews], statementCards: [...state.statementCards], pinnedStatements: [...state.pinnedStatements],
-      evidence: [...state.evidence], inspections: inspectionData, miniGames: [...state.miniGames], links: [...state.links], deductions: [...state.deductions],
+      evidence: [...state.evidence], inspections: inspectionData, miniGames: [...state.miniGames], links: [...state.links],
+      invalidLinks: [...state.invalidLinks], deductions: [...state.deductions],
     };
   }
 
   function save() {
     if (state.phase === "title") return;
-    localStorage.setItem(SAVE_KEY, JSON.stringify(serialize()));
-    el.continueGame.hidden = false;
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(serialize()));
+      el.continueGame.hidden = false;
+    } catch {
+      toast("Trình duyệt đang chặn LocalStorage; tiến trình phiên này chưa thể lưu.");
+    }
   }
 
   function readSave() {
-    try { return JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); } catch { return null; }
+    try {
+      const parsed = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+    } catch {
+      localStorage.removeItem(SAVE_KEY);
+      return null;
+    }
+  }
+
+  function migrateTimelineSlots(savedSlots = {}) {
+    const migrated = {};
+    TIMELINE_SLOTS.forEach((slot) => {
+      const legacyId = slot.correct;
+      const value = savedSlots[slot.id] || savedSlots[legacyId];
+      if (TIMELINE_EVENTS.some((event) => event.id === value)) migrated[slot.id] = value;
+    });
+    return migrated;
   }
 
   function applySave(saved) {
     state.phase = saved.phase || "statements"; state.location = saved.location || "hall";
     state.interviews = new Set(saved.interviews || []); state.statementCards = new Set(saved.statementCards || ["crowd-time"]);
-    state.pinnedStatements = new Set(saved.pinnedStatements || []); state.suspectPressure = saved.suspectPressure || {};
+    state.pinnedStatements = new Set(saved.pinnedStatements || []); state.pinnedAt = saved.pinnedAt || {}; state.suspectPressure = saved.suspectPressure || {};
     state.evidence = new Set(saved.evidence || []); state.inspections = {};
     Object.entries(saved.inspections || {}).forEach(([id, values]) => { state.inspections[id] = new Set(values); });
-    state.miniGames = new Set(saved.miniGames || []); state.links = new Set(saved.links || []); state.deductions = new Set(saved.deductions || []);
+    state.miniGames = new Set(saved.miniGames || []); state.links = new Set(saved.links || []); state.invalidLinks = new Set(saved.invalidLinks || []); state.deductions = new Set(saved.deductions || []);
     state.deductionFailures = saved.deductionFailures || {};
     state.miniProgress = saved.miniProgress && typeof saved.miniProgress === "object" ? saved.miniProgress : {};
     state.audioSolved = Boolean(saved.audioSolved);
-    state.timelineSlots = saved.timelineSlots || {}; state.timelineSolved = Boolean(saved.timelineSolved); state.mistakes = saved.mistakes || 0;
+    state.timelineSlots = migrateTimelineSlots(saved.timelineSlots); state.timelineSolved = Boolean(saved.timelineSolved); state.mistakes = saved.mistakes || 0;
+    state.focus = Number.isFinite(saved.focus) ? Math.max(0, Math.min(100, saved.focus)) : Math.max(0, 100 - state.mistakes * 6);
+    state.penaltyLog = Array.isArray(saved.penaltyLog) ? saved.penaltyLog.slice(-20) : [];
     state.final = saved.final || {}; state.sound = saved.sound !== false; state.rank = saved.rank || null;
   }
 
@@ -532,7 +568,7 @@
     const labels = {
       prologue: "Đọc mở đầu vụ án", statements: `Lấy lời khai ${state.interviews.size}/4`,
       investigation: core === CORE_EVIDENCE.length ? "Đã đủ vật chứng • Đối chiếu" : `Khám phá vật chứng ${core}/${CORE_EVIDENCE.length}`,
-      linking: `Khóa mối liên hệ ${state.links.size}/${REQUIRED_LINKS.length}`,
+      linking: `Khóa mối liên hệ ${lockedCoreLinks()}/${REQUIRED_LINKS.length}`,
       timeline: state.timelineSolved ? "Dòng thời gian đã khóa" : "Tự xếp 5 mốc thời gian",
       reconstruction: "Tự dựng lại toàn bộ vụ án", reveal: "Đối chất", ending: "Hồ sơ đã khép lại",
     };
@@ -541,7 +577,7 @@
     refreshFocus();
   }
 
-  function caseScore() { return Math.max(0, 100 - state.mistakes * 6); }
+  function caseScore() { return Math.max(0, Math.min(100, state.focus)); }
 
   function refreshFocus() {
     const score = caseScore();
@@ -550,13 +586,23 @@
     el.focus.classList.toggle("danger", score < 56);
   }
 
-  function registerMistake() {
-    state.mistakes += 1; refreshFocus();
+  function registerMistake(amount = 6, reason = "Suy luận chưa đủ căn cứ") {
+    const penalty = Math.max(0, Math.round(amount));
+    state.mistakes += 1;
+    state.focus = Math.max(0, state.focus - penalty);
+    state.penaltyLog.push({ amount: penalty, reason, at: new Date().toISOString() });
+    state.penaltyLog = state.penaltyLog.slice(-20);
+    refreshFocus();
+    el.focus.title = `-${penalty} Tập trung • ${reason}`;
+    el.focus.classList.remove("penalty-hit"); void el.focus.offsetWidth; el.focus.classList.add("penalty-hit");
+    save();
   }
 
-  function setPortrait(who) {
+  function setPortrait(who, mood = "neutral") {
     const id = characters[who] ? who : "narrator";
-    el.portrait.className = `portrait ${id}`; el.portrait.hidden = id === "narrator";
+    const safeMood = ["neutral", "thinking", "stressed", "angry", "shocked"].includes(mood) ? mood : "neutral";
+    el.portrait.className = `portrait ${id} mood-${safeMood}`; el.portrait.hidden = id === "narrator";
+    el.portrait.dataset.mood = safeMood; el.dialoguePanel.dataset.mood = safeMood;
     if (currentInterviewId === id && (state.suspectPressure[id] || 0) > 0) el.portrait.classList.add("pressured");
     el.dialoguePanel.classList.toggle("narrator-dialogue", id === "narrator");
     [el.speaker.textContent, el.speakerRole.textContent] = characters[id];
@@ -598,9 +644,9 @@
     });
   }
 
-  function setDialogue(who, text, { next = false, choices = [] } = {}) {
+  function setDialogue(who, text, { next = false, choices = [], mood = "neutral" } = {}) {
     clearDialogueAdvance(); queue = []; queueDone = null; dialogueIsSequence = false;
-    currentDialogueLine = null; currentPinAttempted = false; hideInterrogationTools(); setPortrait(who); typeLine(text, who);
+    currentDialogueLine = null; currentPinAttempted = false; hideInterrogationTools(); setPortrait(who, mood); typeLine(text, who);
     el.next.hidden = !next; el.dialogueHint.textContent = choices.length ? "CHỌN HÀNH ĐỘNG ĐỂ TIẾP TỤC" : next ? "BẤM ĐỂ TIẾP TỤC" : "BẤM ĐỂ TUA CÂU";
     renderChoices(choices);
   }
@@ -610,7 +656,7 @@
       const line = { ...source };
       const previous = groups.at(-1);
       const combinedLength = previous ? previous.text.length + line.text.length + 1 : Infinity;
-      const linked = previous && previous.who === line.who && !previous.pin && !line.pin
+      const linked = previous && previous.who === line.who && previous.mood === line.mood && !previous.pin && !line.pin
         && !previous.breakAfter && !line.breakBefore && combinedLength <= 390;
       if (linked) {
         previous.text = `${previous.text.trim()} ${line.text.trim()}`;
@@ -621,7 +667,7 @@
   }
 
   function lineNeedsPlayer(line) {
-    return Boolean(line.waitForPlayer || (currentInterviewId && line.pin && !state.pinnedStatements.has(line.pin)));
+    return line.autoAdvance !== true;
   }
 
   function finishQueuedLine(line) {
@@ -650,11 +696,16 @@
       currentDialogueLine = null; hideInterrogationTools(); el.next.hidden = true; dialogueIsSequence = false;
       const done = queueDone; queueDone = null; if (done) done(); return;
     }
-    const line = queue.shift(); currentDialogueLine = line; currentPinAttempted = false; setPortrait(line.who);
-    el.next.hidden = true; el.dialogueHint.textContent = "TỰ PHÁT • BẤM ĐỂ TUA CÂU"; renderChoices([]); renderInterrogationTools(line);
+    const line = queue.shift(); currentDialogueLine = line; currentPinAttempted = false; setPortrait(line.who, line.mood);
+    el.next.hidden = true; el.dialogueHint.textContent = "BẤM LẦN 1 ĐỂ HIỆN ĐỦ • LẦN 2 ĐỂ TIẾP"; renderChoices([]); renderInterrogationTools(line);
     typeLine(line.text, line.who, () => finishQueuedLine(line));
   }
-  function advanceDialogue() { if (!finishTyping()) { clearDialogueAdvance(); nextLine(); } }
+  function advanceDialogue() {
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (now < dialogueInputGate) return;
+    if (finishTyping()) { dialogueInputGate = now + 90; return; }
+    dialogueInputGate = now + 90; clearDialogueAdvance(); nextLine();
+  }
 
   function hideInterrogationTools() {
     el.interrogationTools.hidden = true; el.pinStatement.disabled = false; el.dialoguePanel.classList.remove("interrogation-active");
@@ -676,7 +727,7 @@
     if (!currentInterviewId || !currentDialogueLine || currentPinAttempted) return; const pinId = currentDialogueLine.pin;
     const person = suspects[currentInterviewId];
     if (!pinId) {
-      currentPinAttempted = true; registerMistake();
+      currentPinAttempted = true; registerMistake(4, "Ghim một câu chưa thể kiểm chứng");
       state.suspectPressure[currentInterviewId] = Math.min(100, (state.suspectPressure[currentInterviewId] || 0) + 9);
       el.portrait.classList.add("pressured", "pressure-hit"); setTimeout(() => el.portrait.classList.remove("pressure-hit"), 420);
       renderInterrogationTools(currentDialogueLine); save(); playTone(132, .15, "sawtooth", .018);
@@ -684,6 +735,7 @@
     }
     if (state.pinnedStatements.has(pinId)) return; const step = Math.ceil(100 / person.requiredPins.length);
     state.pinnedStatements.add(pinId); state.statementCards.add(pinId);
+    state.pinnedAt[pinId] = { speaker: person.name, text: statements[pinId].quote, capturedAt: new Date().toISOString() };
     state.suspectPressure[currentInterviewId] = Math.min(100, (state.suspectPressure[currentInterviewId] || 0) + step);
     el.portrait.classList.add("pressured", "pressure-hit"); setTimeout(() => el.portrait.classList.remove("pressure-hit"), 420);
     renderInterrogationTools(currentDialogueLine); updateObjective(); save(); playTone(760, .09, "square", .018);
@@ -700,7 +752,7 @@
     state.location = location; el.scene.classList.remove("scene-hall", "scene-studio", "scene-control");
     el.scene.classList.add(`scene-${location}`, "entering"); el.sceneCaption.textContent = locations[location];
     $$('[data-location]', el.locationNav).forEach((button) => button.classList.toggle("active", button.dataset.location === location));
-    renderObjects(); setTimeout(() => el.scene.classList.remove("entering"), 260); save();
+    renderObjects(); setRainForLocation(location); setTimeout(() => el.scene.classList.remove("entering"), 260); save();
   }
 
   function renderObjects() {
@@ -826,7 +878,7 @@
           state.deductions.add(id); playChord([50, 57, 62, 65], .65, .011); save(); renderInspection();
           toast("Suy luận đã đứng vững. Vật chứng có thể được ghi vào hồ sơ."); return;
         }
-        registerMistake(); state.deductionFailures[id] = (state.deductionFailures[id] || 0) + 1; save();
+        registerMistake(6, `Diễn giải sai vật chứng: ${evidence[id].name}`); state.deductionFailures[id] = (state.deductionFailures[id] || 0) + 1; save();
         feedback.textContent = state.deductionFailures[id] >= 2
           ? `Giả thuyết này chưa giải thích được toàn bộ dấu vết. Gợi ý: ${check.hint}`
           : "Giả thuyết này còn mâu thuẫn với dữ kiện vừa khám nghiệm.";
@@ -921,7 +973,7 @@
           return;
         }
         if (rejected.has(zone.id)) { setReadout(`${found.size} / 2 tiếp xúc then chốt`, zone.rejection); return; }
-        rejected.add(zone.id); button.classList.add("rejected"); registerMistake(); persist();
+        rejected.add(zone.id); button.classList.add("rejected"); registerMistake(6, `Quét UV không có giá trị: ${zone.label}`); persist();
         setReadout("Giả thuyết bị loại", zone.rejection); stage.classList.remove("wrong"); void stage.offsetWidth; stage.classList.add("wrong"); playTone(118, .18, "sawtooth", .018);
       });
     });
@@ -943,7 +995,7 @@
     const fit = (piece) => {
       if (!piece) { output.textContent = "Hãy chọn một mảnh trước."; return; }
       if (piece === "brass") { slot.textContent = "KHỚP VẾT LÕM"; slot.classList.add("correct"); solveMiniGame("metronome"); return; }
-      registerMistake(); output.textContent = piece === "wood" ? "Quá nhẹ và không tạo được vết lõm." : "Ốc thép quá nhỏ so với hốc trượt.";
+      registerMistake(6, "Lắp sai vật nặng vào máy đếm nhịp"); output.textContent = piece === "wood" ? "Quá nhẹ và không tạo được vết lõm." : "Ốc thép quá nhỏ so với hốc trượt.";
       slot.classList.remove("wrong"); void slot.offsetWidth; slot.classList.add("wrong"); playTone(126, .16, "sawtooth", .018); save();
     };
     $$("[data-piece]", el.miniGameHost).forEach((button) => {
@@ -982,7 +1034,7 @@
     $("[data-log-reset]", el.miniGameHost).addEventListener("click", () => { chosen = []; persist(); renderSequence(); });
     check.addEventListener("click", () => {
       if (chosen.join(",") === "head,code,crc,delete") { solveMiniGame("access"); return; }
-      registerMistake(); output.textContent = "Gói chưa hợp lệ. Kiểm tra xem có mảnh nào thuộc MIDI/khuếch đại, rồi đọc từ đầu đọc đến thao tác xóa.";
+      registerMistake(6, "Khôi phục sai cấu trúc gói nhật ký"); output.textContent = "Gói chưa hợp lệ. Kiểm tra xem có mảnh nào thuộc MIDI/khuếch đại, rồi đọc từ đầu đọc đến thao tác xóa.";
       sequence.classList.remove("wrong"); void sequence.offsetWidth; sequence.classList.add("wrong"); playTone(118, .18, "sawtooth", .018); save();
     });
     renderSequence();
@@ -1005,7 +1057,8 @@
   function closeInspection() { if (el.inspection.open) el.inspection.close(); pendingEvidence = null; }
 
   function openAudioLab() {
-    if (el.inspection.open) el.inspection.close(); updateAudioReadout(); if (!el.audioLab.open) el.audioLab.showModal();
+    if (el.inspection.open) el.inspection.close(); stopAudioComparison(); updateAudioReadout(); renderAudioComparisonState();
+    if (!el.audioLab.open) el.audioLab.showModal();
   }
 
   function updateAudioReadout() {
@@ -1014,47 +1067,154 @@
     el.audioResult.textContent = Math.abs(value - 58) <= 3 ? "Hai đầu câu đã khớp. Khoảng nghỉ giữa câu vẫn biến mất." : "Hai bản ghi chưa khớp lưới thời gian.";
   }
 
-  function playSample(kind) {
-    ensureAudio(); const notes = [52, 55, 59, 64, 62, 59];
-    const humanTimes = [0, .24, .51, .82, 1.22, 1.48]; const machineTimes = [0, .25, .5, .75, 1, 1.25];
-    (kind === "human" ? humanTimes : machineTimes).forEach((time, index) => setTimeout(() => playMidi(notes[index], .18, .035), time * 620));
+  const AUDIO_COMPARISON = {
+    notes: [52, 55, 59, 64, 62, 59],
+    human: [0, .31, .66, 1.03, 1.52, 1.82],
+    machine: [0, .32, .64, .96, 1.28, 1.6],
+    cycle: 2.2,
+  };
+
+  function renderAudioComparisonState() {
+    const progress = state.miniProgress.audio && typeof state.miniProgress.audio === "object" ? state.miniProgress.audio : {};
+    const compared = new Set(Array.isArray(progress.compared) ? progress.compared : []);
+    $$('[data-audio-mode]', el.audioLab).forEach((button) => {
+      const active = audioComparison?.mode === button.dataset.audioMode;
+      button.classList.toggle("active", active); button.setAttribute("aria-pressed", String(active));
+      button.classList.toggle("heard", compared.has(button.dataset.audioMode));
+    });
+    if (!audioComparison) {
+      el.audioMode.textContent = compared.size === 2 ? "ĐÃ NGHE CẢ HAI • Chọn lại để đối chiếu" : `ĐÃ NGHE ${compared.size}/2 BẢN • Cùng một đầu phát`;
+      el.audioPlayhead.style.width = "0%";
+    }
+  }
+
+  function startAudioComparison(mode) {
+    if (!state.sound) { toast("Hãy bật âm thanh trước khi phân tích nhịp đàn."); return; }
+    if (!AUDIO_COMPARISON[mode]) return;
+    ensureAudio();
+    if (!audioComparison) {
+      audioComparison = { mode, startedAt: performance.now(), lastElapsed: -.05, timer: 0 };
+      audioComparison.timer = setInterval(tickAudioComparison, 28);
+    } else audioComparison.mode = mode;
+    const progress = state.miniProgress.audio && typeof state.miniProgress.audio === "object" ? state.miniProgress.audio : {};
+    const compared = new Set(Array.isArray(progress.compared) ? progress.compared : []); compared.add(mode);
+    state.miniProgress.audio = { compared: [...compared] }; save();
+    el.audioMode.textContent = mode === "human" ? "ĐANG PHÁT • NHỊP NGƯỜI / RUBATO" : "ĐANG PHÁT • MIDI / LƯỢNG TỬ HÓA";
+    renderAudioComparisonState(); tickAudioComparison();
+  }
+
+  function tickAudioComparison() {
+    if (!audioComparison) return;
+    const elapsed = Math.max(0, (performance.now() - audioComparison.startedAt) / 1000);
+    const previous = audioComparison.lastElapsed; const times = AUDIO_COMPARISON[audioComparison.mode];
+    const firstCycle = Math.max(0, Math.floor(previous / AUDIO_COMPARISON.cycle));
+    const lastCycle = Math.floor(elapsed / AUDIO_COMPARISON.cycle);
+    for (let cycle = firstCycle; cycle <= lastCycle; cycle += 1) {
+      times.forEach((time, index) => {
+        const absolute = cycle * AUDIO_COMPARISON.cycle + time;
+        if (absolute > previous && absolute <= elapsed + .035) playMidi(AUDIO_COMPARISON.notes[index], .2, .034);
+      });
+    }
+    audioComparison.lastElapsed = elapsed;
+    el.audioPlayhead.style.width = `${((elapsed % AUDIO_COMPARISON.cycle) / AUDIO_COMPARISON.cycle) * 100}%`;
+  }
+
+  function stopAudioComparison() {
+    if (audioComparison?.timer) clearInterval(audioComparison.timer);
+    audioComparison = null;
+    if (el.audioPlayhead) el.audioPlayhead.style.width = "0%";
+    $$('[data-audio-mode]', el.audioLab).forEach((button) => { button.classList.remove("active"); button.setAttribute("aria-pressed", "false"); });
   }
 
   function lockAudio() {
     const value = Number(el.audioAlign.value);
-    if (Math.abs(value - 58) > 3) { registerMistake(); el.audioResult.textContent = "Điểm đầu và cuối câu vẫn trượt nhau. Hãy nghe lại rồi dịch bản ghi."; playTone(125, .18, "sawtooth", .02); save(); return; }
+    const compared = new Set(state.miniProgress.audio?.compared || []);
+    if (!compared.has("human") || !compared.has("machine")) { el.audioResult.textContent = "Chưa đủ cơ sở: hãy nghe cả bản người biểu diễn và bản MIDI tại cùng đầu phát."; return; }
+    if (audioComparison?.mode !== "machine") { registerMistake(8, "Kết luận MIDI khi đang nghe bản biểu diễn thật"); el.audioResult.textContent = "Bạn đang nghe bản người biểu diễn. Chuyển sang bản hiện trường rồi kiểm tra lại."; playTone(125, .18, "sawtooth", .02); return; }
+    if (Math.abs(value - 58) > 3) { registerMistake(8, "Khóa sai điểm đồng bộ âm thanh"); el.audioResult.textContent = "Điểm đầu và cuối câu vẫn trượt nhau. Hãy nghe lại rồi dịch bản ghi."; playTone(125, .18, "sawtooth", .02); save(); return; }
     state.audioSolved = true; state.miniGames.add("midi"); if (!state.inspections.midi) state.inspections.midi = new Set();
+    delete state.miniProgress.audio; stopAudioComparison();
     evidence.midi.actions.forEach((_, index) => state.inspections.midi.add(index));
     el.audioResult.textContent = "Đã khóa: bản hiện trường bám lưới tuyệt đối, không có độ trễ tự nhiên của người chơi.";
     playChord([48, 55, 60, 64], .9, .014); save(); setTimeout(() => { if (el.audioLab.open) el.audioLab.close(); if (pendingEvidence) { if (!el.inspection.open) el.inspection.showModal(); renderInspection(); } }, 850);
   }
 
   function openLinkBoard() {
-    setPhase("linking", "Đối chiếu lời khai"); selectedStatement = null; selectedEvidence = null; renderLinkBoard();
+    setPhase("linking", "Đối chiếu lời khai"); selectedStatement = null; selectedEvidence = null; linkPointer = null; renderLinkBoard();
     if (!el.linkBoard.open) el.linkBoard.showModal();
+  }
+
+  function lockedCoreLinks() {
+    return REQUIRED_LINKS.filter((id) => state.links.has(id)).length;
+  }
+
+  function linkAnchor(node, workspaceBox) {
+    const box = node?.getBoundingClientRect?.() || { left: 0, top: 0, width: 0, height: 0 };
+    return { x: box.left - workspaceBox.left + box.width / 2, y: box.top - workspaceBox.top + box.height / 2 };
+  }
+
+  function appendLinkPath(start, end, className, id = "") {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const bend = Math.max(34, Math.abs(end.x - start.x) * .42);
+    path.setAttribute("d", `M ${start.x} ${start.y} C ${start.x + bend} ${start.y}, ${end.x - bend} ${end.y}, ${end.x} ${end.y}`);
+    path.setAttribute("class", className); if (id) path.dataset.linkId = id; el.linkLines.append(path);
+  }
+
+  function renderLinkLines() {
+    linkLineFrame = 0; if (!el.linkWorkspace || !el.linkLines) return;
+    el.linkLines.replaceChildren(); const workspaceBox = el.linkWorkspace.getBoundingClientRect();
+    Object.entries(links).forEach(([id, item]) => {
+      if (!state.links.has(id)) return;
+      const statementNode = $(`[data-statement-id="${item.statement}"]`, el.statementDeck);
+      const evidenceNode = $(`[data-evidence-id="${item.evidence}"]`, el.evidenceDeck);
+      if (statementNode && evidenceNode) appendLinkPath(linkAnchor(statementNode, workspaceBox), linkAnchor(evidenceNode, workspaceBox), `locked${REQUIRED_LINKS.includes(id) ? " core" : " optional"}`, id);
+    });
+    const statementNode = selectedStatement ? $(`[data-statement-id="${selectedStatement}"]`, el.statementDeck) : null;
+    const evidenceNode = selectedEvidence ? $(`[data-evidence-id="${selectedEvidence}"]`, el.evidenceDeck) : null;
+    if (!statementNode && !evidenceNode) return;
+    const axis = linkAnchor($(".link-axis", el.linkWorkspace), workspaceBox);
+    const start = statementNode ? linkAnchor(statementNode, workspaceBox) : (linkPointer || axis);
+    const end = evidenceNode ? linkAnchor(evidenceNode, workspaceBox) : (linkPointer || axis);
+    appendLinkPath(start, end, "active");
+  }
+
+  function scheduleLinkLines() {
+    if (linkLineFrame) return;
+    linkLineFrame = requestAnimationFrame(renderLinkLines);
   }
 
   function renderLinkBoard() {
     el.statementDeck.replaceChildren(); el.evidenceDeck.replaceChildren();
     [...state.statementCards].forEach((id) => {
       const item = statements[id]; if (!item) return; const button = document.createElement("button"); button.type = "button";
-      button.className = `file-card${selectedStatement === id ? " selected" : ""}`; button.innerHTML = `<small>${item.who}</small><span>“${item.quote}”</span>`;
-      button.addEventListener("click", () => { selectedStatement = selectedStatement === id ? null : id; renderLinkBoard(); }); el.statementDeck.append(button);
+      const linked = Object.entries(links).some(([linkId, link]) => link.statement === id && state.links.has(linkId));
+      button.dataset.statementId = id; button.className = `file-card${selectedStatement === id ? " selected" : ""}${linked ? " linked" : ""}`;
+      button.setAttribute("aria-pressed", String(selectedStatement === id)); button.innerHTML = `<small>${item.who}</small><span>“${item.quote}”</span>`;
+      button.addEventListener("click", () => { selectedStatement = selectedStatement === id ? null : id; linkPointer = null; renderLinkBoard(); }); el.statementDeck.append(button);
     });
     [...state.evidence].forEach((id) => {
       const item = evidence[id]; if (!item) return; const button = document.createElement("button"); button.type = "button";
-      button.className = `file-card evidence-file${selectedEvidence === id ? " selected" : ""}`; button.innerHTML = `<small>${item.glyph} VẬT CHỨNG</small><span>${item.name}</span>`;
-      button.addEventListener("click", () => { selectedEvidence = selectedEvidence === id ? null : id; renderLinkBoard(); }); el.evidenceDeck.append(button);
+      const linked = Object.entries(links).some(([linkId, link]) => link.evidence === id && state.links.has(linkId));
+      button.dataset.evidenceId = id; button.className = `file-card evidence-file${selectedEvidence === id ? " selected" : ""}${linked ? " linked" : ""}`;
+      button.setAttribute("aria-pressed", String(selectedEvidence === id)); button.innerHTML = `<small>${item.glyph} VẬT CHỨNG</small><span>${item.name}</span>`;
+      button.addEventListener("click", () => { selectedEvidence = selectedEvidence === id ? null : id; linkPointer = null; renderLinkBoard(); }); el.evidenceDeck.append(button);
     });
     el.testLink.disabled = !(selectedStatement && selectedEvidence);
     const selected = selectedStatement && selectedEvidence;
-    el.linkFeedback.textContent = selected ? "Hai mảnh đã đặt lên bàn. Hãy kiểm tra xem chúng thực sự bác bỏ hay củng cố nhau." : `Đã khóa ${state.links.size}/${REQUIRED_LINKS.length} mối liên hệ cốt lõi.`;
+    el.linkFeedback.textContent = selected ? "Đường suy luận đã nối. Hãy kiểm tra xem hai đầu thực sự bác bỏ hay củng cố nhau." : `Đã khóa ${lockedCoreLinks()}/${REQUIRED_LINKS.length} mối liên hệ cốt lõi.`;
+    scheduleLinkLines();
   }
 
   function testSelectedLink() {
     const found = Object.entries(links).find(([, item]) => item.statement === selectedStatement && item.evidence === selectedEvidence);
     if (!found) {
-      registerMistake(); el.linkFeedback.textContent = "Hai mảnh này chưa tạo thành một quan hệ đủ chắc. Không có đáp án nào được tiết lộ.";
+      const pairId = `${selectedStatement}::${selectedEvidence}`;
+      if (state.invalidLinks.has(pairId)) {
+        el.linkFeedback.textContent = "Cặp này đã bị loại trước đó. Không trừ Tập trung lần nữa; hãy đổi ít nhất một đầu mối.";
+      } else {
+        state.invalidLinks.add(pairId); registerMistake(10, "Tạo một liên kết nhân quả không có căn cứ");
+        el.linkFeedback.textContent = "Hai mảnh này chưa tạo thành một quan hệ đủ chắc. Không có đáp án nào được tiết lộ.";
+      }
       el.linkBoard.classList.remove("wrong"); void el.linkBoard.offsetWidth; el.linkBoard.classList.add("wrong"); playTone(132, .16, "sawtooth", .02); save(); return;
     }
     const [id, item] = found; const isNew = !state.links.has(id); state.links.add(id); updateObjective(); save();
@@ -1064,7 +1224,7 @@
   }
 
   function closeLinkBoard() {
-    if (el.linkBoard.open) el.linkBoard.close();
+    if (el.linkBoard.open) el.linkBoard.close(); selectedStatement = null; selectedEvidence = null; linkPointer = null;
     setPhase("investigation", "Khám phá hiện trường"); renderObjects(); renderInvestigationPrompt();
   }
 
@@ -1077,45 +1237,52 @@
 
   function renderTimelineLab() {
     el.timelineSlots.replaceChildren();
-    TIMELINE_EVENTS.forEach((slot) => {
+    TIMELINE_SLOTS.forEach((slot) => {
       const eventId = state.timelineSlots[slot.id]; const event = TIMELINE_EVENTS.find((item) => item.id === eventId);
       const button = document.createElement("button"); button.type = "button"; button.className = `timeline-slot${event ? " filled" : ""}`;
       button.dataset.timelineSlot = slot.id; button.innerHTML = `<time>${slot.time}</time><span>${event ? event.text : "Thả một sự kiện vào mốc này"}</span>`;
-      button.addEventListener("click", () => {
-        if (selectedTimelineEvent) placeTimelineEvent(slot.id, selectedTimelineEvent);
-        else if (eventId) { delete state.timelineSlots[slot.id]; renderTimelineLab(); save(); }
-      });
-      button.addEventListener("dragover", (eventDrag) => eventDrag.preventDefault());
-      button.addEventListener("drop", (eventDrop) => { eventDrop.preventDefault(); const id = eventDrop.dataTransfer?.getData("text/plain"); if (id) placeTimelineEvent(slot.id, id); });
+      button.disabled = state.timelineSolved; button.setAttribute("aria-label", `${slot.time}: ${event ? event.text : "chưa có sự kiện"}`);
+      if (!state.timelineSolved) {
+        button.addEventListener("click", () => {
+          if (selectedTimelineEvent) placeTimelineEvent(slot.id, selectedTimelineEvent);
+          else if (eventId) { delete state.timelineSlots[slot.id]; renderTimelineLab(); save(); }
+        });
+        button.addEventListener("dragover", (eventDrag) => { eventDrag.preventDefault(); if (eventDrag.dataTransfer) eventDrag.dataTransfer.dropEffect = "move"; });
+        button.addEventListener("drop", (eventDrop) => { eventDrop.preventDefault(); const id = eventDrop.dataTransfer?.getData("text/plain"); if (id) placeTimelineEvent(slot.id, id); });
+      }
       el.timelineSlots.append(button);
     });
     const used = new Set(Object.values(state.timelineSlots)); el.timelineDeck.replaceChildren();
     TIMELINE_DECK_ORDER.forEach((id) => {
       if (used.has(id)) return; const event = TIMELINE_EVENTS.find((item) => item.id === id); const button = document.createElement("button");
       button.type = "button"; button.draggable = true; button.dataset.timelineEvent = id; button.className = `timeline-event${selectedTimelineEvent === id ? " selected" : ""}`;
-      button.innerHTML = `<small>SỰ KIỆN</small><span>${event.text}</span>`;
+      button.setAttribute("aria-pressed", String(selectedTimelineEvent === id)); button.innerHTML = `<small>SỰ KIỆN</small><span>${event.text}</span>`;
       button.addEventListener("click", () => { selectedTimelineEvent = selectedTimelineEvent === id ? null : id; renderTimelineLab(); });
-      button.addEventListener("dragstart", (dragEvent) => { selectedTimelineEvent = id; if (dragEvent.dataTransfer) dragEvent.dataTransfer.setData("text/plain", id); });
+      button.addEventListener("dragstart", (dragEvent) => { selectedTimelineEvent = id; if (dragEvent.dataTransfer) { dragEvent.dataTransfer.effectAllowed = "move"; dragEvent.dataTransfer.setData("text/plain", id); } });
+      button.addEventListener("dragend", () => { selectedTimelineEvent = null; renderTimelineLab(); });
       el.timelineDeck.append(button);
     });
-    const filled = Object.keys(state.timelineSlots).length; el.checkTimeline.disabled = filled !== TIMELINE_EVENTS.length;
-    el.timelineFeedback.textContent = state.timelineSolved ? "Dòng thời gian đã được chứng minh bằng hồ sơ." : `Đã đặt ${filled}/${TIMELINE_EVENTS.length} sự kiện. Game chỉ báo cả chuỗi đúng hoặc sai.`;
+    const filled = Object.keys(state.timelineSlots).length; el.checkTimeline.disabled = state.timelineSolved || filled !== TIMELINE_EVENTS.length;
+    const selected = TIMELINE_EVENTS.find((item) => item.id === selectedTimelineEvent);
+    el.timelineFeedback.textContent = state.timelineSolved ? "Dòng thời gian đã được chứng minh và khóa bằng hồ sơ."
+      : selected ? `Đã chọn “${selected.text}”. Chạm một mốc giờ để đặt sự kiện.`
+        : `Đã đặt ${filled}/${TIMELINE_EVENTS.length} sự kiện. Game chỉ báo cả chuỗi đúng hoặc sai.`;
   }
 
   function placeTimelineEvent(slotId, eventId) {
-    if (!TIMELINE_EVENTS.some((item) => item.id === slotId) || !TIMELINE_EVENTS.some((item) => item.id === eventId)) return;
+    if (state.timelineSolved || !TIMELINE_SLOTS.some((item) => item.id === slotId) || !TIMELINE_EVENTS.some((item) => item.id === eventId)) return;
     Object.keys(state.timelineSlots).forEach((key) => { if (state.timelineSlots[key] === eventId) delete state.timelineSlots[key]; });
     state.timelineSlots[slotId] = eventId; selectedTimelineEvent = null; playTone(440 + Object.keys(state.timelineSlots).length * 45, .07, "triangle", .014); renderTimelineLab(); save();
   }
 
   function checkTimeline() {
-    const correct = TIMELINE_EVENTS.every((slot) => state.timelineSlots[slot.id] === slot.id);
+    const correct = TIMELINE_SLOTS.every((slot) => state.timelineSlots[slot.id] === slot.correct);
     if (!correct) {
-      registerMistake(); el.timelineFeedback.textContent = "Ít nhất một sự kiện đang đứng sai mốc. Đối chiếu mốc khách quan; game không chỉ ra ô sai.";
+      registerMistake(10, "Gửi một dòng thời gian sai quan hệ nhân quả"); el.timelineFeedback.textContent = "Ít nhất một sự kiện đang đứng sai mốc. Đối chiếu mốc khách quan; game không chỉ ra ô sai.";
       el.timelineLab.classList.remove("wrong"); void el.timelineLab.offsetWidth; el.timelineLab.classList.add("wrong"); playTone(112, .24, "sawtooth", .022); save(); return;
     }
-    state.timelineSolved = true; el.timelineFeedback.textContent = "Chuỗi thời gian đã khóa: tiếng đàn 23:50 xảy ra sau khi nạn nhân chết.";
-    playChord([45, 52, 57, 60, 64], 1, .014); updateObjective(); save();
+    state.timelineSolved = true; selectedTimelineEvent = null;
+    playChord([45, 52, 57, 60, 64], 1, .014); updateObjective(); save(); renderTimelineLab();
     setTimeout(() => closeTimelineLab(), 900);
   }
 
@@ -1161,7 +1328,7 @@
   function submitReconstruction() {
     const correct = finalSlots.every((slot) => state.final[slot.id] === slot.correct);
     if (!correct) {
-      registerMistake(); const accused = state.final.culprit?.startsWith("suspect-") ? suspects[state.final.culprit.slice(8)] : null;
+      registerMistake(10, "Gửi một chuỗi buộc tội chưa khép kín"); const accused = state.final.culprit?.startsWith("suspect-") ? suspects[state.final.culprit.slice(8)] : null;
       el.reconstructionFeedback.textContent = accused
         ? `${accused.name}: “Nếu buộc tội tôi, hãy chỉ ra cả thời điểm, thủ thuật và hung khí.” Ít nhất một mắt xích chưa đứng vững.`
         : "Ít nhất một mắt xích chưa được chứng minh bởi hồ sơ. Không chỉ ra ô sai — hãy tự đối chiếu lại.";
@@ -1177,10 +1344,18 @@
     playDialogue(reveal, finishCase);
   }
 
-  function finishCase() {
+  function calculateRank() {
     const score = caseScore();
-    const perfectCase = state.mistakes === 0 && state.evidence.has("coffee") && state.evidence.has("umbrella") && state.links.has("haru-route");
-    state.rank = perfectCase ? "S+" : score >= 94 ? "S" : score >= 82 ? "A" : score >= 68 ? "B" : "C";
+    const foundOptional = state.evidence.has("coffee") && state.evidence.has("umbrella") && state.links.has("haru-route");
+    if (score === 100 && foundOptional) return { grade: "S+", perfect: true };
+    if (score >= 85) return { grade: "A", perfect: false };
+    if (score >= 70) return { grade: "B", perfect: false };
+    return { grade: "C", perfect: false };
+  }
+
+  function finishCase() {
+    const score = caseScore(); const result = calculateRank(); const perfectCase = result.perfect;
+    state.rank = result.grade;
     setPhase("ending", perfectCase ? "Hồ sơ hoàn hảo" : "Hồ sơ hoàn tất");
     const ending = perfectCase
       ? `HỒ SƠ HOÀN HẢO — hạng S+, ${score}/100 điểm. Bạn không chỉ tìm ra hung thủ mà còn kiểm tra giả thuyết đầu độc, xác minh đường đi của Haru và bảo toàn bản lưu HANA_MASTER. Không còn người vô tội nào bị bỏ lại dưới bóng nghi ngờ.`
@@ -1205,7 +1380,8 @@
       const grid = document.createElement("div"); grid.className = "notebook-grid";
       Object.entries(statements).forEach(([id, item]) => {
         const unlocked = state.statementCards.has(id); const card = document.createElement("article"); card.className = `notebook-entry${unlocked ? "" : " locked"}`;
-        card.innerHTML = unlocked ? `<small>${item.source}</small><h3>${item.who}</h3><p>“${item.quote}”</p>` : `<small>CHƯA LẤY LỜI KHAI</small><h3>Hồ sơ bị khóa</h3><p>Hãy nói chuyện với người liên quan.</p>`; grid.append(card);
+        const pinned = state.pinnedStatements.has(id);
+        card.innerHTML = unlocked ? `<small>${pinned ? "◆ ĐÃ GHIM • " : ""}${item.source}</small><h3>${item.who}</h3><p>“${item.quote}”</p>` : `<small>CHƯA LẤY LỜI KHAI</small><h3>Hồ sơ bị khóa</h3><p>Hãy nói chuyện với người liên quan.</p>`; grid.append(card);
       }); el.notebookContent.append(grid);
     } else if (tab === "evidence") {
       const grid = document.createElement("div"); grid.className = "notebook-grid";
@@ -1237,6 +1413,32 @@
     if (audioContext.state === "suspended") audioContext.resume();
   }
 
+  function startRainAmbience() {
+    ensureAudio();
+    if (rainSource || !audioContext.createBuffer || !audioContext.createBufferSource) return;
+    const sampleRate = audioContext.sampleRate || 44100; const seconds = 2;
+    const buffer = audioContext.createBuffer(1, sampleRate * seconds, sampleRate); const data = buffer.getChannelData(0);
+    let smoothed = 0;
+    for (let index = 0; index < data.length; index += 1) {
+      smoothed = smoothed * .965 + (Math.random() * 2 - 1) * .035;
+      const drop = Math.random() < .0008 ? (Math.random() * .7 + .3) : 0;
+      data[index] = Math.max(-1, Math.min(1, smoothed * .48 + drop));
+    }
+    rainSource = audioContext.createBufferSource(); rainSource.buffer = buffer; rainSource.loop = true;
+    rainGain = audioContext.createGain(); rainGain.gain.value = 0;
+    if (audioContext.createBiquadFilter) {
+      const filter = audioContext.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 3600;
+      rainSource.connect(filter).connect(rainGain).connect(masterGain);
+    } else rainSource.connect(rainGain).connect(masterGain);
+    rainSource.start();
+  }
+
+  function setRainForLocation(location) {
+    startRainAmbience(); if (!rainGain) return;
+    const levels = { hall: .075, control: .038, studio: .018 }; const target = levels[location] ?? .025;
+    rainGain.gain.setTargetAtTime(target, audioContext.currentTime, .42);
+  }
+
   function playTone(freq, duration = .1, type = "sine", volume = .02, delay = 0) {
     if (!state.sound) return; ensureAudio(); const now = audioContext.currentTime + delay; const osc = audioContext.createOscillator(); const gain = audioContext.createGain();
     osc.type = type; osc.frequency.setValueAtTime(freq, now); gain.gain.setValueAtTime(.0001, now); gain.gain.exponentialRampToValueAtTime(volume, now + .02); gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
@@ -1249,12 +1451,13 @@
   function startScore() {
     ensureAudio(); if (scoreTimer) return;
     const pattern = [45, 52, 57, 60, 43, 50, 55, 59, 41, 48, 53, 57, 43, 50, 55, 58];
-    scoreTimer = setInterval(() => { if (state.sound && state.phase !== "title") { playMidi(pattern[scoreStep % pattern.length], .75, .006); if (scoreStep % 4 === 0) playMidi(pattern[scoreStep % pattern.length] - 12, 1.3, .004); scoreStep += 1; } }, 520);
+    scoreTimer = setInterval(() => { if (state.sound && state.phase !== "title" && !el.audioLab.open) { playMidi(pattern[scoreStep % pattern.length], .75, .006); if (scoreStep % 4 === 0) playMidi(pattern[scoreStep % pattern.length] - 12, 1.3, .004); scoreStep += 1; } }, 520);
   }
 
   function toggleSound() {
     state.sound = !state.sound; ensureAudio(); masterGain.gain.setTargetAtTime(state.sound ? .7 : 0, audioContext.currentTime, .04);
     if (!state.sound) {
+      stopAudioComparison(); renderAudioComparisonState();
       const complete = currentLineComplete; currentLineComplete = null;
       cancelVoiceWait(); voiceSequence += 1;
       if (supportsSpeechSynthesis()) window.speechSynthesis.cancel();
@@ -1269,8 +1472,9 @@
     localStorage.removeItem(SAVE_KEY); showGame(); ensureAudio(); startScore();
     Object.assign(state, {
       phase: "prologue", location: "hall", interviews: new Set(), statementCards: new Set(["crowd-time"]),
-      pinnedStatements: new Set(), suspectPressure: {}, evidence: new Set(), inspections: {}, miniGames: new Set(), links: new Set(),
-      deductions: new Set(), deductionFailures: {}, miniProgress: {}, audioSolved: false, timelineSlots: {}, timelineSolved: false, mistakes: 0, final: {}, rank: null,
+      pinnedStatements: new Set(), pinnedAt: {}, suspectPressure: {}, evidence: new Set(), inspections: {}, miniGames: new Set(), links: new Set(), invalidLinks: new Set(),
+      deductions: new Set(), deductionFailures: {}, miniProgress: {}, audioSolved: false, timelineSlots: {}, timelineSolved: false,
+      mistakes: 0, focus: 100, penaltyLog: [], final: {}, rank: null,
     });
     currentInterviewId = null; currentDialogueLine = null; currentPinAttempted = false; selectedTimelineEvent = null; hideInterrogationTools();
     setPhase("prologue", "Mở đầu"); changeLocation("hall"); playDialogue(prologue, startStatements);
@@ -1297,16 +1501,25 @@
   el.locationNav.addEventListener("click", (event) => { const button = event.target.closest("[data-location]"); if (button) changeLocation(button.dataset.location); });
   el.inspectionClose.addEventListener("click", closeInspection); el.recordEvidence.addEventListener("click", recordPendingEvidence);
   el.linkClose.addEventListener("click", closeLinkBoard); el.testLink.addEventListener("click", testSelectedLink);
-  el.audioClose.addEventListener("click", () => { if (el.audioLab.open) el.audioLab.close(); if (pendingEvidence && !el.inspection.open) { el.inspection.showModal(); renderInspection(); } });
+  el.linkWorkspace.addEventListener("pointermove", (event) => {
+    if ((!selectedStatement && !selectedEvidence) || (selectedStatement && selectedEvidence)) return;
+    const box = el.linkWorkspace.getBoundingClientRect(); linkPointer = { x: event.clientX - box.left, y: event.clientY - box.top }; scheduleLinkLines();
+  });
+  el.linkWorkspace.addEventListener("pointerleave", () => { linkPointer = null; scheduleLinkLines(); });
+  el.statementDeck.addEventListener("scroll", scheduleLinkLines); el.evidenceDeck.addEventListener("scroll", scheduleLinkLines);
+  window.addEventListener("resize", scheduleLinkLines);
+  el.audioClose.addEventListener("click", () => { stopAudioComparison(); renderAudioComparisonState(); if (el.audioLab.open) el.audioLab.close(); if (pendingEvidence && !el.inspection.open) { el.inspection.showModal(); renderInspection(); } });
   el.audioAlign.addEventListener("input", updateAudioReadout); el.lockAudio.addEventListener("click", lockAudio);
   el.timelineClose.addEventListener("click", closeTimelineLab); el.checkTimeline.addEventListener("click", checkTimeline);
-  $$('[data-play-sample]').forEach((button) => button.addEventListener("click", () => playSample(button.dataset.playSample)));
+  $$('[data-audio-mode]').forEach((button) => button.addEventListener("click", () => startAudioComparison(button.dataset.audioMode)));
   el.submitReconstruction.addEventListener("click", submitReconstruction);
   $$(".notebook-tabs button").forEach((button) => button.addEventListener("click", () => renderNotebook(button.dataset.tab)));
   document.addEventListener("keydown", (event) => {
     if (event.code === "Space" && !event.target.matches("button, input") && (typing || !el.next.hidden)) { event.preventDefault(); advanceDialogue(); }
     if (event.key.toLowerCase() === "n" && el.game.classList.contains("active")) openNotebook();
   });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) save(); });
+  window.addEventListener("pagehide", save);
 
   applyTextSize(localStorage.getItem(TEXT_SIZE_KEY) || "large");
   if (supportsSpeechSynthesis()) {

@@ -8,11 +8,11 @@ Game trinh thám 2D nguyên bản chơi trực tiếp trong trình duyệt. Chư
 2. Mở `index.html` bằng Chrome hoặc Edge.
 3. Chọn **Bắt đầu vụ án**.
 
-Game không cần cài Node.js và không gửi dữ liệu người chơi lên máy chủ. Tiến độ được lưu trong `localStorage` của trình duyệt.
+Game không cần cài Node.js và không gửi dữ liệu người chơi lên máy chủ. Tiến độ được lưu trong `localStorage` của trình duyệt và tự nâng cấp từ bản lưu cũ. Chế độ ẩn danh có thể xóa tiến độ khi đóng cửa sổ.
 
 ## Điều khiển
 
-- Hội thoại tự phát; bấm khung thoại hoặc phím `Space` để tua câu hiện tại.
+- Bấm khung thoại hoặc phím `Space`: lần đầu hiện ngay toàn bộ câu đang chạy, lần tiếp theo chuyển sang câu mới.
 - Nút **CHỮ** chuyển giữa ba cỡ chữ.
 - Nút **ÂM** điều khiển nhạc, hiệu ứng và giọng đọc có sẵn trên thiết bị.
 - Trong lúc hỏi cung, ghim câu có thể kiểm chứng.
