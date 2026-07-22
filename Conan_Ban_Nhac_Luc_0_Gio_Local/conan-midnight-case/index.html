@@ -79,7 +79,7 @@
             <p id="dialogue-text" aria-live="polite">Sự thật không nằm trong một lựa chọn có sẵn. Nó nằm ở cách các chi tiết va vào nhau.</p>
             <div id="choice-list" class="choice-list"></div>
           </div>
-          <span id="dialogue-hint" class="dialogue-hint" aria-hidden="true">TỰ PHÁT • BẤM ĐỂ TUA CÂU</span>
+          <span id="dialogue-hint" class="dialogue-hint" aria-hidden="true">BẤM LẦN 1 ĐỂ HIỆN ĐỦ • LẦN 2 ĐỂ TIẾP</span>
           <button id="next-button" class="next-button" type="button" aria-label="Tiếp tục" hidden>TIẾP TỤC ▸</button>
         </section>
       </section>
@@ -128,7 +128,8 @@
             <button id="link-close" class="close-button" type="button" aria-label="Đóng bảng">×</button>
           </header>
           <p class="board-help">Chọn một mẩu lời khai, rồi chọn một vật chứng liên quan. Ghép sai không làm lộ đáp án.</p>
-          <div class="link-columns">
+          <div id="link-workspace" class="link-columns">
+            <svg id="link-lines" class="link-lines" aria-hidden="true"></svg>
             <section><h3>Lời khai</h3><div id="statement-deck" class="card-deck"></div></section>
             <div class="link-axis" aria-hidden="true"><span>↔</span></div>
             <section><h3>Vật chứng</h3><div id="evidence-deck" class="card-deck"></div></section>
@@ -146,10 +147,14 @@
             <div><span>PHÁP Y ÂM THANH</span><h2>Khoảng nghỉ biến mất</h2></div>
             <button id="audio-close" class="close-button" type="button" aria-label="Tạm rời phòng phân tích">×</button>
           </header>
-          <p>Nghe hai đoạn, rồi kéo bản ghi hiện trường để khớp với nhịp biểu diễn thật. Sai lệch còn lại sẽ cho biết tiếng đàn có phải do con người chơi hay không.</p>
+          <p>Chuyển qua lại giữa hai bản tại cùng một vị trí phát, rồi kéo bản ghi hiện trường để khớp lưới. Sai lệch còn lại sẽ cho biết tiếng đàn có phải do con người chơi hay không.</p>
+          <div class="audio-transport" aria-live="polite">
+            <span id="audio-mode">CHƯA PHÁT • Hãy nghe đủ cả hai bản</span>
+            <i><b id="audio-playhead"></b></i>
+          </div>
           <div class="wave-compare">
-            <div class="wave-row"><button type="button" data-play-sample="human">▶ BẢN TẬP CỦA NẠN NHÂN</button><div class="wave human-wave"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-            <div class="wave-row"><button type="button" data-play-sample="scene">▶ ÂM THANH HIỆN TRƯỜNG</button><div id="scene-wave" class="wave scene-wave"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+            <div class="wave-row"><button type="button" data-audio-mode="human" aria-pressed="false">▶ BẢN NGƯỜI BIỂU DIỄN</button><div class="wave human-wave"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+            <div class="wave-row"><button type="button" data-audio-mode="machine" aria-pressed="false">▶ BẢN MIDI HIỆN TRƯỜNG</button><div id="scene-wave" class="wave scene-wave"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
           </div>
           <label class="align-control">Dịch bản ghi trên lưới thời gian <input id="audio-align" type="range" min="0" max="100" value="18" /></label>
           <div class="audio-readout"><span id="audio-offset">Độ lệch: +82 ms</span><b id="audio-result">Chưa khóa được nhịp.</b></div>

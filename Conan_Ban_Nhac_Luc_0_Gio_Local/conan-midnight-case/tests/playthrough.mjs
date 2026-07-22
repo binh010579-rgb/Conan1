@@ -26,6 +26,9 @@ const bundledFonts = [
 assert.match(styles, /--display: "Barlow Condensed"/, "Tiêu đề phải dùng font game condensed");
 assert.match(styles, /--ui: "Be Vietnam Pro"/, "Hội thoại phải dùng font Việt dễ đọc");
 assert.doesNotMatch(styles, /Georgia|Courier New/, "Không được quay lại bộ font template cũ");
+assert.match(styles, /\.portrait\.mood-stressed/, "Chân dung phải có phản ứng tâm trạng căng thẳng");
+assert.match(styles, /\.link-lines path\.active/, "Bảng liên kết phải vẽ đường suy luận đang thao tác");
+assert.match(styles, /\.audio-transport/, "Bàn pháp y phải hiển thị đầu phát đồng bộ");
 for (const fontFile of bundledFonts) {
   const font = await readFile(path.join(GAME_DIR, "assets", "fonts", fontFile));
   assert.equal(font.subarray(0, 4).toString("ascii"), "wOF2", `${fontFile} phải là WOFF2 hợp lệ`);
@@ -129,7 +132,20 @@ async function clickChoice(document, text) {
   button.click();
 }
 
-async function completeInterview(document, suspectName, pinFragments) {
+async function advanceDialogueUntil(document, check, label, timeout = 10000) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    const result = check();
+    if (result) return result;
+    const next = document.querySelector("#next-button");
+    if (!next.hidden) next.click();
+    else document.querySelector("#dialogue-panel").click();
+    await sleep(100);
+  }
+  throw new Error(`Không thể tiến hội thoại tới: ${label}`);
+}
+
+async function completeInterview(document, suspectName, pinFragments, expectedMood = null) {
   await clickChoice(document, suspectName);
   const deadline = Date.now() + 6000;
   const pinned = new Set();
@@ -139,6 +155,7 @@ async function completeInterview(document, suspectName, pinFragments) {
     const pinButton = document.querySelector("#pin-statement");
     for (const fragment of pinFragments) {
       if (!pinned.has(fragment) && dialogue.includes(fragment) && !pinButton.hidden && !pinButton.disabled) {
+        if (expectedMood) assert(document.querySelector("#portrait").classList.contains(expectedMood), `${suspectName} phải đổi đúng tâm trạng ở câu then chốt`);
         pinButton.click();
         pinned.add(fragment);
       }
@@ -209,11 +226,17 @@ const evidencePlan = {
     mini: async (document, window) => {
       await clickInspectionAction(document, "Mở bàn pháp y âm thanh");
       await waitFor(() => document.querySelector("#audio-lab").open, "bàn pháp y âm thanh");
+      document.querySelector("#sound-button").click();
+      document.querySelector('[data-audio-mode="human"]').click();
+      await sleep(40);
+      document.querySelector('[data-audio-mode="machine"]').click();
+      await sleep(40);
       const align = document.querySelector("#audio-align");
       align.value = "58";
       align.dispatchEvent(new window.Event("input", { bubbles: true }));
       document.querySelector("#lock-audio").click();
       await waitFor(() => document.querySelector("#inspection").open, "quay lại khám nghiệm MIDI", 3000);
+      document.querySelector("#sound-button").click();
     },
   },
   access: {
@@ -265,6 +288,7 @@ async function lockLink(document, statementText, evidenceText) {
     `vật chứng “${evidenceText}”`,
   );
   evidenceButton.click();
+  await waitFor(() => document.querySelector("#link-lines path.active"), "đường nối xem trước trên bảng liên kết");
   const test = document.querySelector("#test-link");
   assert.equal(test.disabled, false, "Nút đối chiếu phải khả dụng");
   test.click();
@@ -277,12 +301,18 @@ async function runPerfectPlaythrough() {
 
   document.querySelector("#new-game-button").click();
   document.querySelector("#sound-button").click();
-  await waitFor(() => buttonByText(document, document.querySelector("#choice-list"), "Aoyama Rina"), "menu lời khai", 5000);
+  await sleep(120);
+  assert.equal(document.querySelector("#speaker-name").textContent, "Hồ sơ vụ án", "Hội thoại không được tự bỏ qua dòng đầu");
+  await advanceDialogueUntil(
+    document,
+    () => buttonByText(document, document.querySelector("#choice-list"), "Aoyama Rina"),
+    "menu lời khai",
+  );
 
-  await completeInterview(document, "Aoyama Rina", ["hoàn hảo đến vô hồn"]);
-  await completeInterview(document, "Kisaragi Misaki", ["Yuto cầm thẻ S-04"]);
-  await completeInterview(document, "Nishino Haru", ["Yuto bước khỏi phòng điều khiển"]);
-  await completeInterview(document, "Senda Yuto", ["không vào Phòng thu A", "Đã tắt hoàn toàn"]);
+  await completeInterview(document, "Aoyama Rina", ["hoàn hảo đến vô hồn"], "mood-thinking");
+  await completeInterview(document, "Kisaragi Misaki", ["Yuto cầm thẻ S-04"], "mood-stressed");
+  await completeInterview(document, "Nishino Haru", ["Yuto bước khỏi phòng điều khiển"], "mood-thinking");
+  await completeInterview(document, "Senda Yuto", ["không vào Phòng thu A", "Đã tắt hoàn toàn"], "mood-stressed");
 
   await clickChoice(document, "Đến hiện trường");
   await waitFor(() => document.querySelector('[data-evidence="watch"]'), "hiện trường studio");
@@ -310,9 +340,10 @@ async function runPerfectPlaythrough() {
 
   await clickChoice(document, "Dựng dòng thời gian");
   await waitFor(() => document.querySelector("#timeline-lab").open, "bàn dòng thời gian");
-  for (const id of ["seal", "card", "death", "yuto", "midi"]) {
+  const timelineAnswers = [["seal", "slot-2255"], ["card", "slot-2312"], ["death", "slot-2318"], ["yuto", "slot-2325"], ["midi", "slot-2350"]];
+  for (const [id, slot] of timelineAnswers) {
     (await waitFor(() => document.querySelector(`[data-timeline-event="${id}"]`), `thẻ thời gian ${id}`)).click();
-    document.querySelector(`[data-timeline-slot="${id}"]`).click();
+    document.querySelector(`[data-timeline-slot="${slot}"]`).click();
   }
   const checkTimeline = document.querySelector("#check-timeline");
   assert.equal(checkTimeline.disabled, false, "Dòng thời gian đã đủ năm mốc");
@@ -336,6 +367,16 @@ async function runPerfectPlaythrough() {
   assert.equal(submit.disabled, false, "Đủ năm mắt xích để đối chất");
   submit.click();
 
+  await advanceDialogueUntil(
+    document,
+    () => {
+      const endingSave = JSON.parse(window.localStorage.getItem(SAVE_KEY) || "null");
+      return endingSave?.phase === "ending" ? endingSave : null;
+    },
+    "kết thúc hạng S+",
+    12000,
+  );
+
   await waitFor(
     () => {
       const saved = JSON.parse(window.localStorage.getItem(SAVE_KEY) || "null");
@@ -346,11 +387,15 @@ async function runPerfectPlaythrough() {
   );
   const saved = JSON.parse(window.localStorage.getItem(SAVE_KEY));
   assert.equal(saved.rank, "S+");
+  assert.equal(saved.saveVersion, 3);
+  assert.equal(saved.focus, 100);
   assert.equal(saved.mistakes, 0);
   assert.equal(saved.evidence.length, 10);
   assert.equal(saved.links.length, 6);
   assert.equal(saved.deductions.length, 5);
   assert.equal(saved.timelineSolved, true);
+  assert.match(saved.pinnedAt["misaki-slip"].text, /tệp hẹn giờ chạy lúc 23:50/, "Bản ghim phải lưu toàn bộ câu gốc, không lấy phần chữ đang gõ");
+  assert.deepEqual(saved.penaltyLog, []);
   assert.equal(document.querySelector("#focus-label").textContent, "TẬP TRUNG 100");
   await waitFor(() => /HỒ SƠ HOÀN HẢO/.test(document.querySelector("#dialogue-text").textContent), "dòng kết thúc S+", 3000);
   assert.match(document.querySelector("#dialogue-text").textContent, /HỒ SƠ HOÀN HẢO/);
@@ -386,6 +431,8 @@ async function verifyPenaltyHintAndStrictRank(serialized) {
   investigationSave.deductions = investigationSave.deductions.filter((id) => id !== "watch");
   investigationSave.deductionFailures = { ...investigationSave.deductionFailures, watch: 1 };
   investigationSave.mistakes = 0;
+  investigationSave.focus = 100;
+  investigationSave.penaltyLog = [];
   investigationSave.rank = null;
 
   const hintGame = createGame(JSON.stringify(investigationSave));
@@ -397,17 +444,20 @@ async function verifyPenaltyHintAndStrictRank(serialized) {
   const hintSave = JSON.parse(hintGame.window.localStorage.getItem(SAVE_KEY));
   assert.equal(hintSave.deductionFailures.watch, 2);
   assert.equal(hintSave.mistakes, 1);
+  assert.equal(hintSave.focus, 94);
+  assert.match(hintSave.penaltyLog.at(-1).reason, /Đồng hồ thông minh/);
   assert.deepEqual(hintGame.browserErrors, [], `Không được có lỗi ở nhánh gợi ý: ${hintGame.browserErrors.map(String).join("\n")}`);
   hintGame.dom.window.close();
 
   const oneMistakeSave = JSON.parse(serialized);
   oneMistakeSave.mistakes = 1;
+  oneMistakeSave.focus = 94;
   oneMistakeSave.rank = null;
   const rankGame = createGame(JSON.stringify(oneMistakeSave));
   rankGame.document.querySelector("#continue-button").click();
-  await waitFor(() => /hạng S, 94\/100/.test(rankGame.document.querySelector("#dialogue-text").textContent), "hạng S sau một lỗi", 3000);
+  await waitFor(() => /hạng A, 94\/100/.test(rankGame.document.querySelector("#dialogue-text").textContent), "hạng A sau một lỗi", 3000);
   const rankedSave = JSON.parse(rankGame.window.localStorage.getItem(SAVE_KEY));
-  assert.equal(rankedSave.rank, "S", "Một lỗi không được nhận hạng S+");
+  assert.equal(rankedSave.rank, "A", "Một lỗi không được nhận hạng S+");
   assert.equal(rankGame.document.querySelector("#focus-label").textContent, "TẬP TRUNG 94");
   assert.deepEqual(rankGame.browserErrors, [], `Không được có lỗi ở nhánh xếp hạng: ${rankGame.browserErrors.map(String).join("\n")}`);
   rankGame.dom.window.close();
@@ -478,8 +528,65 @@ async function verifyForensicProgressAndDecoys(serialized) {
   accessGame.dom.window.close();
 }
 
+async function verifyCausalPenaltyAndLockedTimeline(serialized) {
+  const linkSave = JSON.parse(serialized);
+  linkSave.phase = "investigation";
+  linkSave.location = "hall";
+  linkSave.rank = null;
+  linkSave.mistakes = 0;
+  linkSave.focus = 100;
+  linkSave.penaltyLog = [];
+  linkSave.invalidLinks = [];
+
+  const linkGame = createGame(JSON.stringify(linkSave));
+  linkGame.document.querySelector("#continue-button").click();
+  await clickChoice(linkGame.document, "Mở bảng đối chiếu");
+  const statement = await waitFor(
+    () => buttonByText(linkGame.document, linkGame.document.querySelector("#statement-deck"), "Tiếng đàn từ 23:50"),
+    "lời khai cho thử liên kết sai",
+  );
+  statement.click();
+  const wrongEvidence = buttonByText(linkGame.document, linkGame.document.querySelector("#evidence-deck"), "Lệnh phát MIDI");
+  wrongEvidence.click();
+  await waitFor(() => linkGame.document.querySelector("#link-lines path.active"), "đường nhân quả đang nối");
+  linkGame.document.querySelector("#test-link").click();
+  assert.equal(linkGame.document.querySelector("#focus-label").textContent, "TẬP TRUNG 90", "Liên kết sai phải trừ 10 Focus");
+  linkGame.document.querySelector("#test-link").click();
+  assert.equal(linkGame.document.querySelector("#focus-label").textContent, "TẬP TRUNG 90", "Cùng một liên kết sai không được phạt lặp vô hạn");
+  const invalidSave = JSON.parse(linkGame.window.localStorage.getItem(SAVE_KEY));
+  assert.deepEqual(invalidSave.invalidLinks, ["crowd-time::midi"]);
+  assert.equal(invalidSave.penaltyLog.length, 1);
+  assert.deepEqual(linkGame.browserErrors, [], `Không được có lỗi ở Bảng Liên kết: ${linkGame.browserErrors.map(String).join("\n")}`);
+  linkGame.dom.window.close();
+
+  const timelineSave = JSON.parse(serialized);
+  timelineSave.phase = "investigation";
+  timelineSave.location = "hall";
+  timelineSave.rank = null;
+  const timelineGame = createGame(JSON.stringify(timelineSave));
+  timelineGame.document.querySelector("#continue-button").click();
+  await clickChoice(timelineGame.document, "Dựng dòng thời gian");
+  const slots = [...timelineGame.document.querySelectorAll("[data-timeline-slot]")];
+  assert.equal(slots.length, 5);
+  assert(slots.every((slot) => slot.disabled), "Dòng thời gian đã chứng minh phải khóa toàn bộ ô");
+  assert.equal(timelineGame.document.querySelector("#check-timeline").disabled, true);
+  assert.match(timelineGame.document.querySelector("#timeline-feedback").textContent, /đã được chứng minh và khóa/);
+  assert.deepEqual(timelineGame.browserErrors, [], `Không được có lỗi ở dòng thời gian khóa: ${timelineGame.browserErrors.map(String).join("\n")}`);
+  timelineGame.dom.window.close();
+}
+
+async function verifyCorruptSaveRecovery() {
+  const game = createGame("{khong-phai-json");
+  assert.equal(game.document.querySelector("#continue-button").hidden, true, "Save hỏng phải bị vô hiệu hóa an toàn");
+  assert.equal(game.window.localStorage.getItem(SAVE_KEY), null, "Save hỏng phải được dọn để có thể bắt đầu lại");
+  assert.deepEqual(game.browserErrors, [], `Không được có lỗi khi gặp save hỏng: ${game.browserErrors.map(String).join("\n")}`);
+  game.dom.window.close();
+}
+
 const serialized = await runPerfectPlaythrough();
 await verifyContinue(serialized);
 await verifyPenaltyHintAndStrictRank(serialized);
 await verifyForensicProgressAndDecoys(serialized);
-console.log("PASS: full UI playthrough, deeper forensics, strict S+, saved mini-progress, penalty hint, 0 browser errors");
+await verifyCausalPenaltyAndLockedTimeline(serialized);
+await verifyCorruptSaveRecovery();
+console.log("PASS: manual dialogue, moods, pins, causal lines, Focus, synchronized audio, locked timeline, strict S+, resilient saves, 0 browser errors");
